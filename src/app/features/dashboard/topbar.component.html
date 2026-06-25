@@ -1,0 +1,43 @@
+<header class="h-14 border-b border-zinc-800 bg-zinc-950/80 px-6 flex items-center justify-between z-40 relative">
+  <button (click)="toggleSearch()"
+          class="flex items-center gap-2.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-900/80 border border-zinc-800/80 rounded-lg text-zinc-400 hover:text-zinc-200 transition-all text-xs w-64 text-left">
+    <lucide-icon name="search" class="h-3.5 w-3.5 text-zinc-500"></lucide-icon>
+    <span>Buscar comandos o tareas...</span>
+    <kbd class="ml-auto bg-zinc-950 text-[10px] text-zinc-600 border border-zinc-800 px-1.5 py-0.5 rounded font-mono font-bold">⌘K</kbd>
+  </button>
+
+  <div class="flex items-center gap-4">
+    <button class="relative text-zinc-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-zinc-900">
+      <lucide-icon name="bell" class="h-4 w-4"></lucide-icon>
+      @if (hasNotifications()) {
+        <span class="absolute top-1.5 right-1.5 h-2 w-2 bg-white rounded-full ring-2 ring-zinc-950"></span>
+      }
+    </button>
+  </div>
+</header>
+
+@if (isSearchOpen()) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center pt-[15vh] px-4 animate-fade-in" (click)="toggleSearch()">
+    <div class="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden glass-panel" (click)="$event.stopPropagation()">
+      <div class="flex items-center px-4 border-b border-zinc-800">
+        <lucide-icon name="search" class="text-zinc-500 h-4 w-4 mr-3"></lucide-icon>
+        <input type="text" placeholder="Escribe un comando para buscar..."
+               class="w-full h-12 bg-transparent text-sm text-white placeholder-zinc-500 focus:outline-none" autofocus>
+        <button (click)="toggleSearch()" class="text-zinc-600 hover:text-zinc-400 text-xs font-mono bg-zinc-950 border border-zinc-800 px-1.5 py-0.5 rounded">ESC</button>
+      </div>
+      <div class="p-2">
+        <span class="px-3 py-1.5 text-[10px] font-medium text-zinc-500 uppercase tracking-wider block">Atajos recomendados</span>
+        <div class="space-y-0.5">
+          <div class="flex items-center justify-between px-3 py-2 hover:bg-zinc-800 rounded-lg text-xs text-zinc-300 cursor-pointer transition-colors">
+            <span class="font-medium">Ir al Tablero Kanban</span>
+            <span class="text-[10px] text-zinc-500 font-mono">G luego K</span>
+          </div>
+          <div class="flex items-center justify-between px-3 py-2 hover:bg-zinc-800 rounded-lg text-xs text-zinc-300 cursor-pointer transition-colors">
+            <span class="font-medium">Crear Nueva Tarea</span>
+            <span class="text-[10px] text-zinc-500 font-mono">C</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}

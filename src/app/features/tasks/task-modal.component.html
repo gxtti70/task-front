@@ -1,0 +1,76 @@
+<div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in" (click)="onDismiss()">
+  <div class="w-full max-w-xl bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden glass-panel animate-slide-in" (click)="$event.stopPropagation()">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
+      <h2 class="text-sm font-semibold tracking-tight text-white flex items-center gap-2">
+        <lucide-icon name="sliders" class="h-4 w-4 text-zinc-400"></lucide-icon>
+        Crear nuevo item de trabajo
+      </h2>
+      <button (click)="onDismiss()" class="text-zinc-500 hover:text-white transition-colors">
+        <lucide-icon name="x" class="h-4 w-4"></lucide-icon>
+      </button>
+    </div>
+
+    <form (ngSubmit)="onSubmit()" class="p-5 space-y-4">
+      <div>
+        <label class="block text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Título del Item</label>
+        <input type="text" name="title" [(ngModel)]="title" placeholder="p.ej., Implementar interceptor de refresco JWT"
+               class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3.5 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition-colors" required>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Descripción de criterio de aceptación</label>
+        <textarea name="description" [(ngModel)]="description" rows="3" placeholder="Detalla el alcance técnico de la tarea..."
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3.5 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition-colors resize-none"></textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Prioridad de Negocio</label>
+          <select name="priority" [(ngModel)]="priority"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zinc-500">
+            <option value="LOW">Baja (Low)</option>
+            <option value="MEDIUM">Media (Medium)</option>
+            <option value="HIGH">Alta (High)</option>
+            <option value="URGENT">Urgente (Urgent)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Estado Inicial de Flujo</label>
+          <select name="status" [(ngModel)]="status"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zinc-500">
+            <option value="TODO">Por Hacer</option>
+            <option value="IN_PROGRESS">En Progreso</option>
+            <option value="REVIEW">En Revisión</option>
+            <option value="DONE">Finalizado</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Story Points (Fibonacci)</label>
+          <input type="number" name="storyPoints" [(ngModel)]="storyPoints" min="0" max="21"
+                 class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3.5 py-2 text-sm text-white focus:outline-none focus:border-zinc-500 transition-colors">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Etiquetas (Separadas por coma)</label>
+          <input type="text" name="tagsString" [(ngModel)]="tagsString" placeholder="Frontend, Core, Security"
+                 class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3.5 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition-colors">
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800 mt-6">
+        <button type="button" (click)="onDismiss()"
+                class="px-4 py-2 bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 rounded-lg text-xs font-medium text-zinc-300 transition-colors">
+          Cancelar
+        </button>
+        <button type="submit"
+                class="px-4 py-2 bg-white hover:bg-zinc-200 text-black rounded-lg text-xs font-medium transition-colors">
+          Crear Item
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
