@@ -1,73 +1,175 @@
 # Task Manager
 
-## Iniciar localmente
+<div align="center">
 
-Requisitos: Docker y Docker Compose (`docker-compose` en algunas instalaciones). La base de datos, API y frontend se inician juntos:
+![Angular](https://img.shields.io/badge/Angular-21-DD0031?logo=angular&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Playwright](https://img.shields.io/badge/Testing-Playwright-45ba4b?logo=playwright&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Active-success)
+
+</div>
+
+Aplicación web de gestión de tareas desarrollada con Angular, pensada para funcionar con un backend Java y PostgreSQL. El proyecto incluye flujo de autenticación, administración de usuarios, roles y una experiencia de uso preparada para entorno local y desarrollo colaborativo.
+
+## Descripción
+
+Task Manager es una solución de gestión de proyectos y tareas orientada a equipos que necesitan:
+
+- crear, organizar y priorizar tareas,
+- asignar roles y permisos por usuario,
+- gestionar flujos de trabajo con distintos niveles de acceso,
+- ejecutar la aplicación completa en entorno local con Docker.
+
+## Características principales
+
+- Interfaz moderna construida con Angular 21
+- Gestión de autenticación y autorización
+- Roles: `ADMIN`, `MANAGER`, `SCRUM`, `DEVELOPER`
+- Desarrollo local simplificado con Docker Compose
+- Proxy de API configurado para entorno frontend/backend
+- Pruebas E2E con Playwright
+- Configuración de variables de entorno segura
+
+## Stack tecnológico
+
+- Angular 21
+- TypeScript
+- RxJS
+- Tailwind CSS
+- Playwright
+- Docker / Docker Compose
+- PostgreSQL 16
+- Java 17 + Spring Boot (backend asociado)
+
+## Requisitos previos
+
+Antes de iniciar el proyecto asegúrate de tener instalado:
+
+- Node.js 22+
+- npm 11+
+- Docker
+- Docker Compose
+
+## Inicio rápido
+
+### Opción 1: Ejecutar con Docker Compose
 
 ```bash
 docker-compose up --build -d
 ```
 
-Abre <http://localhost:4300>. La API responde en <http://localhost:8082/api/health>. PostgreSQL queda disponible solo en tu equipo en `localhost:5433`; la aplicación usa la red interna de Compose.
+La aplicación quedará disponible en:
 
-La primera compilación puede tardar unos minutos porque descarga Java, Maven, Node y dependencias. Para ver el arranque y los errores:
+- Frontend: http://localhost:4300
+- API: http://localhost:8082/api/health
+- Base de datos PostgreSQL: localhost:5433
+
+Para ver logs:
 
 ```bash
 docker-compose logs -f
 ```
 
-El registro público crea usuarios `DEVELOPER`. Para obtener el primer administrador local:
-
-1. Registra una cuenta desde <http://localhost:4300/auth/register>.
-2. Promuévela en la base local, sustituyendo el correo:
-
-   ```bash
-   ./scripts/promote-local-admin.sh tu-correo@ejemplo.com
-   ```
-
-3. Inicia sesión de nuevo. Desde administración podrás crear cuentas con rol `ADMIN`, `MANAGER`, `SCRUM` o `DEVELOPER`.
-
-Para apagar los servicios sin borrar la base:
+Para detener los servicios:
 
 ```bash
 docker-compose down
 ```
 
-Después de editar código en la carpeta del proyecto, reconstruye con `docker-compose up --build -d` para aplicar cambios.
-
-Para reiniciar la base desde cero y borrar todos los datos locales:
-
-```bash
-docker-compose down -v
-```
-
-Las credenciales de `compose.yaml` son valores de desarrollo local. Puedes copiarlas a `.env` y cambiarlas. No publiques esos valores ni expongas los puertos localmente configurados a Internet.
-
-## Desarrollo sin Docker para el frontend
-
-Si ejecutas la API en tu máquina en el puerto 8080, instala dependencias y arranca Angular:
+### Opción 2: Desarrollo local sin Docker
 
 ```bash
 npm ci
 npm start
 ```
 
-`proxy.conf.json` reenvía `/api` a `http://127.0.0.1:8080`.
+Esto arrancará la app frontend en modo de desarrollo y usará el proxy configurado para la API.
 
-## Compilar y probar
+## Variables de entorno
+
+El repositorio incluye un archivo `.env.example` como referencia. Cópialo a `.env` y configura valores seguros para tu entorno local:
+
+```bash
+cp .env.example .env
+```
+
+Variables recomendadas:
+
+- `DB_PASSWORD`
+- `JWT_SECRET`
+
+No compartas estos valores ni los subas a repositorios públicos.
+
+## Scripts disponibles
+
+```bash
+npm run start
+npm run build
+npm test -- --watch=false
+npm run e2e
+```
+
+## Estructura del proyecto
+
+```text
+.
+├── .env.example
+├── .gitignore
+├── README.md
+├── angular.json
+├── compose.yaml
+├── package.json
+├── proxy.conf.json
+├── proxy.docker.conf.json
+├── proxy.e2e.conf.json
+├── public/
+├── scripts/
+├── src/
+├── tailwind.config.js
+├── tsconfig.app.json
+├── tsconfig.json
+├── tsconfig.spec.json
+└── e2e/
+```
+
+## Pruebas
+
+Para ejecutar la suite de pruebas del frontend:
 
 ```bash
 npm test -- --watch=false
-npm run build
 ```
 
-Las pruebas de navegador requieren el backend, la base local y Chromium de Playwright:
+Para pruebas de navegador con Playwright:
 
 ```bash
 npx playwright install chromium
 npm run e2e
 ```
 
-## Variables locales
+## Seguridad
 
-Compose tiene valores de desarrollo por defecto. Para sobrescribirlos, copia `.env.example` como `.env` y cambia `DB_PASSWORD` y `JWT_SECRET`. El backend valida el secreto JWT y no imprime SQL por defecto.
+Este proyecto sigue buenas prácticas para evitar la exposición de secretos:
+
+- no se deben commitear archivos `.env` ni credenciales reales,
+- se usa `.env.example` como base segura de configuración,
+- la documentación evita incluir contraseñas o tokens en el repositorio.
+
+## Contribución
+
+Las contribuciones son bienvenidas. Si deseas colaborar:
+
+1. Haz fork del proyecto.
+2. Crea una rama para tu cambio.
+3. Realiza tus modificaciones.
+4. Abre un pull request con una descripción clara.
+
+## Contacto
+
+Si necesitas ayuda o quieres colaborar en el proyecto, puedes contactar con el responsable del repositorio o abrir una issue en GitHub.
+
+---
+
+Hecho con Angular, TypeScript y Docker para desarrollo moderno y escalable.
