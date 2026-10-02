@@ -1,6 +1,7 @@
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { LucideAngularModule } from 'lucide-angular';
 import { TaskModalComponent } from '../tasks/task-modal.component';
 import { Project, Task, TaskPriority, TaskStatus, User } from '../../core/models';
@@ -12,7 +13,7 @@ import { ProjectService } from '../../core/services/project.service';
 @Component({
   selector: 'app-kanban',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, TaskModalComponent],
+  imports: [CommonModule, FormsModule, DragDropModule, LucideAngularModule, TaskModalComponent],
   templateUrl: './kanban.component.html'
 })
 export class KanbanComponent implements OnInit {
@@ -39,6 +40,7 @@ export class KanbanComponent implements OnInit {
     { value: 'IMPEDIMENT', label: 'Bloqueado' },
     { value: 'DONE', label: 'Finalizado' }
   ];
+  dropListIds = this.statusOptions.map(status => `kanban-${status.value}`);
 
   assignees = computed(() => {
     const users = new Map<string, User>();
@@ -68,6 +70,16 @@ export class KanbanComponent implements OnInit {
 
   tasksForStatus(status: TaskStatus): Task[] {
     return this.filteredTasks().filter(task => task.status === status);
+  }
+
+  getStatusClass(status: TaskStatus): string {
+    switch (status) {
+      case 'TODO': return 'border-zinc-700 bg-zinc-800 text-zinc-300';
+      case 'IN_PROGRESS': return 'border-sky-500/30 bg-sky-500/10 text-sky-400';
+      case 'REVIEW': return 'border-violet-500/30 bg-violet-500/10 text-violet-400';
+      case 'IMPEDIMENT': return 'border-red-500/30 bg-red-500/10 text-red-400';
+      case 'DONE': return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400';
+    }
   }
 
   ngOnInit(): void {
@@ -143,6 +155,12 @@ export class KanbanComponent implements OnInit {
         this.toast.errorFor(err, 'No se pudo actualizar el estado de la tarea.');
       }
     });
+  }
+
+  dropTask(event: CdkDragDrop<Task[]>, targetStatus: TaskStatus): void {
+    const task = (event.item.data as Task | undefined)
+      ?? event.previousContainer.data[event.previousIndex];
+    if (task) this.setTaskStatus(task, targetStatus);
   }
 
   requestDelete(task: Task): void {

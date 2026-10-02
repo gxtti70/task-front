@@ -14,7 +14,16 @@
   @if (isLoading()) {
     <p class="text-xs text-zinc-500">Cargando proyectos...</p>
   } @else if (projects().length === 0) {
-    <p class="rounded-xl border border-dashed border-zinc-800 p-8 text-center text-xs text-zinc-500">Todavía no hay proyectos.</p>
+    <div class="rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 px-6 py-10 text-center">
+      <lucide-icon name="folder-plus" class="mx-auto h-7 w-7 text-zinc-600"></lucide-icon>
+      <h2 class="mt-3 text-sm font-medium text-zinc-200">Todavía no hay proyectos</h2>
+      <p class="mt-1 text-xs text-zinc-500">Crea un proyecto y elige a las personas que trabajarán en él.</p>
+      @if (authService.canManageTasks()) {
+        <button (click)="openCreateModal()" class="mt-4 rounded-lg bg-white px-3.5 py-2 text-xs font-medium text-black hover:bg-zinc-200">
+          Crear primer proyecto
+        </button>
+      }
+    </div>
   } @else {
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       @for (project of projects(); track project.id) {
@@ -53,7 +62,7 @@
 
 @if (isModalOpen()) {
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" (click)="closeModal()">
-    <section class="w-full max-w-md space-y-4 rounded-xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl" (click)="$event.stopPropagation()">
+    <section class="w-full max-w-xl space-y-4 rounded-xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl" (click)="$event.stopPropagation()">
       <h2 class="text-base font-semibold text-white">{{ editingProject() ? 'Editar proyecto' : 'Crear proyecto' }}</h2>
       <label class="block text-xs text-zinc-400">Nombre
         <input [(ngModel)]="newProject.name" name="projectName" required maxlength="255" class="mt-1 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white" />
@@ -61,6 +70,35 @@
       <label class="block text-xs text-zinc-400">Descripción
         <textarea [(ngModel)]="newProject.description" name="projectDescription" rows="3" maxlength="255" class="mt-1 w-full resize-none rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white"></textarea>
       </label>
+      @if (!editingProject()) {
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-medium text-zinc-300">Miembros iniciales</label>
+            <span class="text-[10px] text-zinc-500">{{ selectedInitialMemberIds().length }} seleccionados</span>
+          </div>
+          <p class="text-[10px] text-zinc-500">El propietario se agrega automáticamente al proyecto.</p>
+          <div class="max-h-40 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-900/60">
+            @if (isLoadingUsers()) {
+              <p class="p-3 text-xs text-zinc-500">Cargando usuarios...</p>
+            } @else if (availableInitialMembers().length === 0) {
+              <p class="p-3 text-xs text-zinc-500">No hay otros usuarios activos para agregar.</p>
+            } @else {
+              @for (user of availableInitialMembers(); track user.id) {
+                <label class="flex cursor-pointer items-center gap-3 border-b border-zinc-800/70 px-3 py-2 last:border-0 hover:bg-zinc-800/50">
+                  <input type="checkbox" [checked]="selectedInitialMemberIds().includes(user.id!)"
+                    (change)="toggleInitialMember(user.id!, $any($event.target).checked)"
+                    class="h-3.5 w-3.5 accent-white" />
+                  <span class="min-w-0 flex-1">
+                    <span class="block truncate text-xs text-zinc-200">{{ user.name || user.fullName || user.email }}</span>
+                    <span class="block truncate text-[10px] text-zinc-500">{{ user.email }}</span>
+                  </span>
+                  <span class="rounded border border-zinc-700 px-1.5 py-0.5 text-[9px] uppercase text-zinc-400">{{ user.role }}</span>
+                </label>
+              }
+            }
+          </div>
+        </div>
+      }
       <label class="block text-xs text-zinc-400">Estado
         <select [(ngModel)]="newProject.status" name="projectStatus" class="mt-1 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white">
           <option value="ACTIVE">Activo</option><option value="ON_HOLD">En pausa</option><option value="COMPLETED">Completado</option>
@@ -69,7 +107,7 @@
       </label>
       <div class="flex justify-end gap-2 border-t border-zinc-900 pt-3">
         <button (click)="closeModal()" class="rounded-lg px-3.5 py-2 text-xs text-zinc-400 hover:bg-zinc-900 hover:text-white">Cancelar</button>
-        <button (click)="saveProject()" [disabled]="isSaving()" class="rounded-lg bg-white px-3.5 py-2 text-xs font-medium text-black disabled:opacity-50">{{ isSaving() ? 'Guardando...' : 'Guardar' }}</button>
+        <button (click)="saveProject()" [disabled]="isSaving() || !newProject.name.trim()" class="rounded-lg bg-white px-3.5 py-2 text-xs font-medium text-black disabled:opacity-50">{{ isSaving() ? 'Guardando...' : editingProject() ? 'Guardar cambios' : 'Crear proyecto' }}</button>
       </div>
     </section>
   </div>

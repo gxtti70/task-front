@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AdminUser, UserRole } from '../../core/models';
 import { AdminUserService } from '../../core/services/admin-user.service';
 import { ToastService } from '../../core/services/toast.service';
+import { roleBadgeClasses } from '../../core/utils/role-style';
 
 @Component({
   selector: 'app-admin-users',
@@ -18,6 +19,7 @@ export class UsersComponent implements OnInit {
   isLoading = signal(true);
   isSaving = signal(false);
   updatingUserId = signal<string | null>(null);
+  roleBadgeClasses = roleBadgeClasses;
   newUser = { fullName: '', email: '', password: '', role: 'DEVELOPER' as UserRole };
 
   ngOnInit(): void {

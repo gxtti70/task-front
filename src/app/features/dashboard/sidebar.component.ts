@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '../../core/services/auth.service';
+import { roleBadgeClasses } from '../../core/utils/role-style';
 
 @Component({
   selector: 'app-sidebar',
@@ -18,6 +19,7 @@ export class SidebarComponent {
   public userRole = computed(() => this.authService.userRole());
   public isAdmin = computed(() => this.authService.isAdmin());
   public canManageTasks = computed(() => this.authService.canManageTasks());
+  public roleBadgeClasses = roleBadgeClasses;
 
   // Prioriza el nombre completo, username, name o el correo electrónico de forma limpia
   public displayName = computed(() => {

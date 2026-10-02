@@ -41,7 +41,8 @@
               <p class="truncate text-xs text-zinc-500">{{ user.email }} · {{ user.active ? 'Activo' : 'Desactivado' }}</p>
             </div>
             <select [ngModel]="user.role" (ngModelChange)="updateUser(user, { role: $event })" [name]="'role-' + user.id"
-              [disabled]="updatingUserId() === user.id" class="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-[10px] uppercase text-zinc-300">
+              [disabled]="updatingUserId() === user.id" class="rounded border px-2 py-1 text-[10px] uppercase disabled:opacity-50"
+              [ngClass]="roleBadgeClasses(user.role)">
               <option value="DEVELOPER">Developer</option><option value="SCRUM">Scrum</option>
               <option value="MANAGER">Manager</option><option value="ADMIN">Admin</option>
             </select>

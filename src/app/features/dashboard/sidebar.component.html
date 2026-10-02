@@ -48,7 +48,7 @@
          class="flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-zinc-200 rounded-lg text-sm">
         <lucide-icon name="folder" class="h-4 w-4"></lucide-icon>
         @if (!isCollapsed()) {
-          <span class="animate-fade-in text-xs">Core Platform</span>
+          <span class="animate-fade-in text-xs">Todos los proyectos</span>
         }
       </a>
     </div>
@@ -74,7 +74,7 @@
           </div>
           <!-- Badge dinámico del rol -->
           <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded w-fit mt-0.5"
-                [ngClass]="isAdmin() ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-zinc-800 text-zinc-400'">
+                [ngClass]="roleBadgeClasses(userRole()) + ' border'">
             {{ userRole() }}
           </span>
         </div>
