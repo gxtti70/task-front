@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { guestGuard } from './core/guards/guest.guard';
+import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   {
@@ -9,14 +11,17 @@ export const routes: Routes = [
   },
   {
     path: 'auth',
+    canActivate: [guestGuard],
     children: [
       {
         path: 'login',
-        loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent)
+        loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent),
+        canActivate: [guestGuard]
       },
       {
         path: 'register',
-        loadComponent: () => import('./features/auth/register.component').then(m => m.RegisterComponent)
+        loadComponent: () => import('./features/auth/register.component').then(m => m.RegisterComponent),
+        canActivate: [guestGuard]
       }
     ]
   },
@@ -28,6 +33,20 @@ export const routes: Routes = [
       {
         path: 'kanban',
         loadComponent: () => import('./features/kanban/kanban.component').then(m => m.KanbanComponent)
+      },
+      {
+        path: 'projects',
+        loadComponent: () => import('./features/projects/projects.component').then(m => m.ProjectsComponent)
+      },
+      {
+        path: 'admin',
+        children: [
+          {
+            path: 'users',
+            canActivate: [adminGuard],
+            loadComponent: () => import('./features/admin/users.component').then(m => m.UsersComponent)
+          }
+        ]
       }
     ]
   },

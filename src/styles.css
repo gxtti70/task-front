@@ -7,3 +7,41 @@ body {
   color: #fafafa;
   font-family: ui-sans-serif, system-ui, sans-serif;
 }
+
+/* ==========================================================================
+   Efecto Cortina Elegante (View Transition - Dark Theme)
+   ========================================================================== */
+
+/* La vista actual se atenúa sutilmente hacia el fondo */
+::view-transition-old(root) {
+  animation: 350ms cubic-bezier(0.4, 0, 0.2, 1) both curtain-exit;
+  z-index: 1;
+}
+
+/* La nueva vista entra desplegándose de arriba a abajo como una cortina */
+::view-transition-new(root) {
+  animation: 450ms cubic-bezier(0.16, 1, 0.3, 1) both curtain-enter;
+  z-index: 2;
+}
+
+@keyframes curtain-exit {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.97);
+    opacity: 0.4;
+    filter: brightness(0.5);
+  }
+}
+
+@keyframes curtain-enter {
+  from {
+    /* Revela la vista desde la parte superior */
+    clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+  }
+  to {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+}

@@ -1,189 +1,120 @@
-<div class="h-full flex flex-col space-y-6">
-  <div class="flex items-center justify-between">
+<section class="space-y-5">
+  <header class="flex items-center justify-between gap-4">
     <div>
       <h1 class="text-xl font-semibold tracking-tight text-white">Sprint Active Backlog</h1>
-      <p class="text-xs text-zinc-500 mt-0.5">Visualización y tracking del flujo ágil del equipo</p>
+      <p class="mt-0.5 text-xs text-zinc-500">Tareas de los proyectos y su estado actual</p>
     </div>
-    <button (click)="openCreateModal()"
-            class="bg-white hover:bg-zinc-200 text-black text-xs font-medium px-3.5 py-2 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
-      <lucide-icon name="plus" class="h-3.5 w-3.5"></lucide-icon>
-      Crear Tarea
-    </button>
+    @if (authService.canManageTasks()) {
+      <button (click)="openCreateModal()" class="flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-xs font-medium text-black hover:bg-zinc-200">
+        <lucide-icon name="plus" class="h-3.5 w-3.5"></lucide-icon>
+        Crear tarea
+      </button>
+    }
+  </header>
+
+  <div class="grid grid-cols-1 gap-2 rounded-xl border border-zinc-900 bg-zinc-950/50 p-3 md:grid-cols-[minmax(12rem,1fr)_10rem_12rem_12rem_auto]">
+    <input [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" name="taskSearch" type="search"
+      placeholder="Buscar tareas, etiquetas..." class="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-600">
+    <select [ngModel]="priorityFilter()" (ngModelChange)="priorityFilter.set($event)" name="priorityFilter"
+      class="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-white focus:outline-none">
+      <option value="ALL">Todas las prioridades</option>
+      <option value="URGENT">Urgente</option>
+      <option value="HIGH">Alta</option>
+      <option value="MEDIUM">Media</option>
+      <option value="LOW">Baja</option>
+    </select>
+    <select [ngModel]="assigneeFilter()" (ngModelChange)="assigneeFilter.set($event)" name="assigneeFilter"
+      class="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-white focus:outline-none">
+      <option value="ALL">Todos los responsables</option>
+      @for (user of assignees(); track user.id) {
+        <option [value]="user.id">{{ user.name || user.email }}</option>
+      }
+    </select>
+    <select [ngModel]="projectFilter()" (ngModelChange)="projectFilter.set($event)" name="projectFilter"
+      class="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-white focus:outline-none">
+      <option value="ALL">Todos los proyectos</option>
+      <option value="NONE">Sin proyecto</option>
+      @for (project of projects(); track project.id) {
+        <option [value]="project.id">{{ project.name }}</option>
+      }
+    </select>
+    <button (click)="clearFilters()" class="rounded-lg border border-zinc-800 px-3 py-2 text-xs text-zinc-400 hover:bg-zinc-900 hover:text-white">Limpiar</button>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 flex-1 items-start">
+  @if (isLoading()) {
+    <div class="rounded-xl border border-zinc-900 bg-zinc-950/40 p-8 text-center text-sm text-zinc-500">Cargando tareas...</div>
+  } @else {
+    <div class="grid grid-cols-1 items-start gap-3 md:grid-cols-2 xl:grid-cols-5">
+      @for (column of statusOptions; track column.value) {
+        <section class="flex min-h-[55vh] flex-col rounded-xl border border-zinc-900/70 bg-zinc-950/40 p-3">
+          <header class="mb-3 flex items-center justify-between px-1">
+            <h2 class="text-xs font-semibold text-zinc-200">{{ column.label }}</h2>
+            <span class="rounded-full border border-zinc-800 bg-zinc-900 px-1.5 py-0.5 font-mono text-[10px] text-zinc-400">
+              {{ tasksForStatus(column.value).length }}
+            </span>
+          </header>
+          <div class="flex-1 space-y-2.5 overflow-y-auto">
+            @for (task of tasksForStatus(column.value); track task.id) {
+              <article class="group rounded-xl border border-zinc-800/80 bg-zinc-900/80 p-3.5 shadow-sm transition hover:border-zinc-700">
+                <div class="mb-2 flex items-start justify-between gap-2">
+                  <span class="truncate font-mono text-[9px] font-semibold tracking-wider text-zinc-500">{{ task.id }}</span>
+                  <span class="rounded border px-1.5 py-0.5 text-[9px] font-medium" [ngClass]="getPriorityClass(task.priority)">{{ task.priority }}</span>
+                </div>
+                <h3 class="line-clamp-2 text-xs font-semibold text-zinc-100">{{ task.title }}</h3>
+                <p class="mt-1 line-clamp-2 text-[11px] leading-relaxed text-zinc-500">{{ task.description }}</p>
 
-    <!-- COLUMNA: POR HACER -->
-    <div class="bg-zinc-950/40 border border-zinc-900/60 p-3 rounded-xl flex flex-col min-h-[60vh]">
-      <div class="flex items-center justify-between mb-3 px-1">
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-semibold text-white tracking-wide">Por Hacer</span>
-          <span class="bg-zinc-900 text-zinc-500 text-[10px] px-1.5 py-0.5 rounded-full border border-zinc-800 font-mono">{{ todoTasks().length }}</span>
-        </div>
-      </div>
-      <div class="space-y-2.5 flex-1 overflow-y-auto">
-        @for (task of todoTasks(); track task.id) {
-          <div (click)="cycleStatus(task)" class="bg-zinc-900/80 border border-zinc-800/80 p-4 rounded-xl hover:border-zinc-700 transition-all cursor-pointer shadow-sm group animate-fade-in">
-            <div class="flex items-start justify-between gap-2 mb-2">
-              <span class="text-[10px] font-mono text-zinc-500 tracking-wider font-semibold">{{ task.id }}</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded font-medium {{ getPriorityClass(task.priority) }}">{{ task.priority }}</span>
-            </div>
-            <h3 class="text-xs font-semibold text-zinc-200 group-hover:text-white transition-colors line-clamp-1">{{ task.title }}</h3>
-            <p class="text-[11px] text-zinc-500 mt-1 line-clamp-2 leading-relaxed">{{ task.description }}</p>
-            <div class="flex items-center justify-between pt-3 mt-3 border-t border-zinc-950">
-              <div class="flex items-center gap-1">
-                @for (tag of task.tags; track tag) {
-                  <span class="text-[9px] bg-zinc-950 border border-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">{{ tag }}</span>
-                }
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] font-mono text-zinc-600 bg-zinc-950 px-1.5 py-0.5 rounded border border-zinc-900">{{ task.storyPoints }} SP</span>
-                <img [src]="task.assignee.avatarUrl" class="h-5 w-5 rounded-full border border-zinc-800 bg-zinc-900 object-cover" [title]="task.assignee.name">
-              </div>
-            </div>
+                <div class="mt-3 flex flex-wrap gap-1">
+                  @for (tag of task.tags; track tag) {
+                    <span class="rounded border border-zinc-800 bg-zinc-950 px-1.5 py-0.5 text-[9px] text-zinc-400">{{ tag }}</span>
+                  }
+                </div>
+
+                <div class="mt-3 flex items-center justify-between gap-2 border-t border-zinc-950 pt-3">
+                  <div class="flex min-w-0 items-center gap-1.5">
+                    <img [src]="task.assignee.avatarUrl" class="h-5 w-5 rounded-full border border-zinc-800 object-cover" [title]="task.assignee.name || task.assignee.email" [alt]="task.assignee.name || task.assignee.email">
+                    <span class="truncate text-[10px] text-zinc-400">{{ task.assignee.name || task.assignee.email }}</span>
+                  </div>
+                  <span class="shrink-0 rounded border border-zinc-900 bg-zinc-950 px-1.5 py-0.5 font-mono text-[9px] text-zinc-500">{{ task.storyPoints }} SP</span>
+                </div>
+
+                <div class="mt-3 grid grid-cols-[1fr_auto_auto] gap-1.5">
+                  <select [ngModel]="task.status" (ngModelChange)="setTaskStatus(task, $event)" [name]="'status-' + task.id"
+                    class="min-w-0 rounded-md border border-zinc-800 bg-zinc-950 px-2 py-1.5 text-[10px] text-zinc-300 focus:outline-none">
+                    @for (status of statusOptions; track status.value) {
+                      <option [value]="status.value">{{ status.label }}</option>
+                    }
+                  </select>
+                  @if (authService.canManageTasks()) {
+                    <button (click)="openEditModal(task)" class="rounded-md border border-zinc-800 px-2 py-1.5 text-[10px] text-zinc-400 hover:bg-zinc-800 hover:text-white">Editar</button>
+                    <button (click)="requestDelete(task)" class="rounded-md border border-red-950 px-2 py-1.5 text-[10px] text-red-400 hover:bg-red-950/50">Borrar</button>
+                  }
+                </div>
+              </article>
+            } @empty {
+              <p class="rounded-lg border border-dashed border-zinc-800 p-4 text-center text-[10px] text-zinc-600">Sin tareas en esta columna</p>
+            }
           </div>
-        }
-      </div>
+        </section>
+      }
     </div>
-
-    <!-- COLUMNA: EN PROGRESO -->
-    <div class="bg-zinc-950/40 border border-zinc-900/60 p-3 rounded-xl flex flex-col min-h-[60vh]">
-      <div class="flex items-center justify-between mb-3 px-1">
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-semibold text-white tracking-wide">En Progreso</span>
-          <span class="bg-zinc-900 text-zinc-500 text-[10px] px-1.5 py-0.5 rounded-full border border-zinc-800 font-mono">{{ inProgressTasks().length }}</span>
-        </div>
-      </div>
-      <div class="space-y-2.5 flex-1 overflow-y-auto">
-        @for (task of inProgressTasks(); track task.id) {
-          <div (click)="cycleStatus(task)" class="bg-zinc-900/80 border border-zinc-800/80 p-4 rounded-xl hover:border-zinc-700 transition-all cursor-pointer shadow-sm group animate-fade-in">
-            <div class="flex items-start justify-between gap-2 mb-2">
-              <span class="text-[10px] font-mono text-zinc-500 tracking-wider font-semibold">{{ task.id }}</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded font-medium {{ getPriorityClass(task.priority) }}">{{ task.priority }}</span>
-            </div>
-            <h3 class="text-xs font-semibold text-zinc-200 group-hover:text-white transition-colors line-clamp-1">{{ task.title }}</h3>
-            <p class="text-[11px] text-zinc-500 mt-1 line-clamp-2 leading-relaxed">{{ task.description }}</p>
-            <div class="flex items-center justify-between pt-3 mt-3 border-t border-zinc-950">
-              <div class="flex items-center gap-1">
-                @for (tag of task.tags; track tag) {
-                  <span class="text-[9px] bg-zinc-950 border border-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">{{ tag }}</span>
-                }
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] font-mono text-zinc-600 bg-zinc-950 px-1.5 py-0.5 rounded border border-zinc-900">{{ task.storyPoints }} SP</span>
-                <img [src]="task.assignee.avatarUrl" class="h-5 w-5 rounded-full border border-zinc-800 bg-zinc-900 object-cover" [title]="task.assignee.name">
-              </div>
-            </div>
-          </div>
-        }
-      </div>
-    </div>
-
-    <!-- COLUMNA: EN REVISIÓN -->
-    <div class="bg-zinc-950/40 border border-zinc-900/60 p-3 rounded-xl flex flex-col min-h-[60vh]">
-      <div class="flex items-center justify-between mb-3 px-1">
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-semibold text-white tracking-wide">En Revisión</span>
-          <span class="bg-zinc-900 text-zinc-500 text-[10px] px-1.5 py-0.5 rounded-full border border-zinc-800 font-mono">{{ reviewTasks().length }}</span>
-        </div>
-      </div>
-      <div class="space-y-2.5 flex-1 overflow-y-auto">
-        @for (task of reviewTasks(); track task.id) {
-          <div (click)="cycleStatus(task)" class="bg-zinc-900/80 border border-zinc-800/80 p-4 rounded-xl hover:border-zinc-700 transition-all cursor-pointer shadow-sm group animate-fade-in">
-            <div class="flex items-start justify-between gap-2 mb-2">
-              <span class="text-[10px] font-mono text-zinc-500 tracking-wider font-semibold">{{ task.id }}</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded font-medium {{ getPriorityClass(task.priority) }}">{{ task.priority }}</span>
-            </div>
-            <h3 class="text-xs font-semibold text-zinc-200 group-hover:text-white transition-colors line-clamp-1">{{ task.title }}</h3>
-            <p class="text-[11px] text-zinc-500 mt-1 line-clamp-2 leading-relaxed">{{ task.description }}</p>
-            <div class="flex items-center justify-between pt-3 mt-3 border-t border-zinc-950">
-              <div class="flex items-center gap-1">
-                @for (tag of task.tags; track tag) {
-                  <span class="text-[9px] bg-zinc-950 border border-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">{{ tag }}</span>
-                }
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] font-mono text-zinc-600 bg-zinc-950 px-1.5 py-0.5 rounded border border-zinc-900">{{ task.storyPoints }} SP</span>
-                <img [src]="task.assignee.avatarUrl" class="h-5 w-5 rounded-full border border-zinc-800 bg-zinc-900 object-cover" [title]="task.assignee.name">
-              </div>
-            </div>
-          </div>
-        }
-      </div>
-    </div>
-
-    <!-- COLUMNA: IMPEDIMENTOS -->
-    <div class="bg-zinc-950/40 border border-zinc-900/60 p-3 rounded-xl flex flex-col min-h-[60vh]">
-      <div class="flex items-center justify-between mb-3 px-1">
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-semibold text-red-400/90 tracking-wide">Impedimentos</span>
-          <span class="bg-red-950/50 text-red-400 text-[10px] px-1.5 py-0.5 rounded-full border border-red-900/50 font-mono">
-            {{ impededTasks().length }}
-          </span>
-        </div>
-      </div>
-      <div class="space-y-2.5 flex-1 overflow-y-auto">
-        @for (task of impededTasks(); track task.id) {
-          <div (click)="cycleStatus(task)" class="bg-zinc-900/80 border border-red-950/40 p-4 rounded-xl hover:border-red-900/60 transition-all cursor-pointer shadow-sm group animate-fade-in">
-            <div class="flex items-start justify-between gap-2 mb-2">
-              <span class="text-[10px] font-mono text-zinc-500 tracking-wider font-semibold">{{ task.id }}</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded font-medium bg-red-950/60 border border-red-900/40 text-red-400">Bloqueado</span>
-            </div>
-            <h3 class="text-xs font-semibold text-zinc-200 group-hover:text-red-400 transition-colors line-clamp-1">{{ task.title }}</h3>
-            <p class="text-[11px] text-zinc-500 mt-1 line-clamp-2 leading-relaxed">{{ task.description }}</p>
-
-            <div class="flex items-center justify-between pt-3 mt-3 border-t border-zinc-950">
-              <div class="flex items-center gap-1">
-                @for (tag of task.tags; track tag) {
-                  <span class="text-[9px] bg-zinc-950 border border-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">{{ tag }}</span>
-                }
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] font-mono text-zinc-600 bg-zinc-950 px-1.5 py-0.5 rounded border border-zinc-900">{{ task.storyPoints }} SP</span>
-                <img [src]="task.assignee.avatarUrl" class="h-5 w-5 rounded-full border border-zinc-800 bg-zinc-900 object-cover" [title]="task.assignee.name">
-              </div>
-            </div>
-          </div>
-        }
-      </div>
-    </div>
-
-    <!-- COLUMNA: FINALIZADO -->
-    <div class="bg-zinc-950/40 border border-zinc-900/60 p-3 rounded-xl flex flex-col min-h-[60vh]">
-      <div class="flex items-center justify-between mb-3 px-1">
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-semibold text-white tracking-wide">Finalizado</span>
-          <span class="bg-zinc-900 text-zinc-500 text-[10px] px-1.5 py-0.5 rounded-full border border-zinc-800 font-mono">{{ doneTasks().length }}</span>
-        </div>
-      </div>
-      <div class="space-y-2.5 flex-1 overflow-y-auto">
-        @for (task of doneTasks(); track task.id) {
-          <div (click)="cycleStatus(task)" class="bg-zinc-900/80 border border-zinc-800/80 p-4 rounded-xl hover:border-zinc-700 transition-all cursor-pointer shadow-sm group opacity-60 hover:opacity-100 animate-fade-in">
-            <div class="flex items-start justify-between gap-2 mb-2">
-              <span class="text-[10px] font-mono text-zinc-500 tracking-wider font-semibold line-through">{{ task.id }}</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded font-medium {{ getPriorityClass(task.priority) }}">{{ task.priority }}</span>
-            </div>
-            <h3 class="text-xs font-semibold text-zinc-400 line-through transition-colors line-clamp-1">{{ task.title }}</h3>
-            <p class="text-[11px] text-zinc-600 mt-1 line-clamp-2 leading-relaxed">{{ task.description }}</p>
-            <div class="flex items-center justify-between pt-3 mt-3 border-t border-zinc-950">
-              <div class="flex items-center gap-1">
-                @for (tag of task.tags; track tag) {
-                  <span class="text-[9px] bg-zinc-950 border border-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded">{{ tag }}</span>
-                }
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] font-mono text-zinc-700 bg-zinc-950 px-1.5 py-0.5 rounded border border-zinc-900">{{ task.storyPoints }} SP</span>
-                <img [src]="task.assignee.avatarUrl" class="h-5 w-5 rounded-full border border-zinc-800 bg-zinc-900 object-cover grayscale" [title]="task.assignee.name">
-              </div>
-            </div>
-          </div>
-        }
-      </div>
-    </div>
-
-  </div>
-</div>
+  }
+</section>
 
 @if (isModalOpen()) {
-  <app-task-modal (closeModal)="closeCreateModal()" (taskCreated)="handleTaskCreated($event)"></app-task-modal>
+  <app-task-modal [task]="editingTask()" (closeModal)="closeTaskModal()" (taskCreated)="saveTask($event)"></app-task-modal>
+}
+
+@if (taskToDelete(); as task) {
+  <div class="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 p-4" role="presentation">
+    <section class="w-full max-w-sm space-y-4 rounded-xl border border-zinc-800 bg-zinc-950 p-5 shadow-2xl" role="alertdialog" aria-modal="true" aria-labelledby="delete-task-title">
+      <div>
+        <h2 id="delete-task-title" class="text-sm font-semibold text-white">¿Eliminar esta tarea?</h2>
+        <p class="mt-1 text-xs text-zinc-400">{{ task.title }} se eliminará permanentemente.</p>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button (click)="cancelDelete()" class="rounded-lg border border-zinc-800 px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-900">Cancelar</button>
+        <button (click)="confirmDelete()" class="rounded-lg bg-red-500 px-3 py-2 text-xs font-medium text-white hover:bg-red-400">Eliminar</button>
+      </div>
+    </section>
+  </div>
 }

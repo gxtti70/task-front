@@ -1,59 +1,73 @@
-# TaskFront
+# Task Manager
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.5.
+## Iniciar localmente
 
-## Development server
-
-To start a local development server, run:
+Requisitos: Docker y Docker Compose (`docker-compose` en algunas instalaciones). La base de datos, API y frontend se inician juntos:
 
 ```bash
-ng serve
+docker-compose up --build -d
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Abre <http://localhost:4300>. La API responde en <http://localhost:8082/api/health>. PostgreSQL queda disponible solo en tu equipo en `localhost:5433`; la aplicación usa la red interna de Compose.
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+La primera compilación puede tardar unos minutos porque descarga Java, Maven, Node y dependencias. Para ver el arranque y los errores:
 
 ```bash
-ng generate component component-name
+docker-compose logs -f
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+El registro público crea usuarios `DEVELOPER`. Para obtener el primer administrador local:
+
+1. Registra una cuenta desde <http://localhost:4300/auth/register>.
+2. Promuévela en la base local, sustituyendo el correo:
+
+   ```bash
+   ./scripts/promote-local-admin.sh tu-correo@ejemplo.com
+   ```
+
+3. Inicia sesión de nuevo. Desde administración podrás crear cuentas con rol `ADMIN`, `MANAGER`, `SCRUM` o `DEVELOPER`.
+
+Para apagar los servicios sin borrar la base:
 
 ```bash
-ng generate --help
+docker-compose down
 ```
 
-## Building
+Después de editar código en la carpeta del proyecto, reconstruye con `docker-compose up --build -d` para aplicar cambios.
 
-To build the project run:
+Para reiniciar la base desde cero y borrar todos los datos locales:
 
 ```bash
-ng build
+docker-compose down -v
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Las credenciales de `compose.yaml` son valores de desarrollo local. Puedes copiarlas a `.env` y cambiarlas. No publiques esos valores ni expongas los puertos localmente configurados a Internet.
 
-## Running unit tests
+## Desarrollo sin Docker para el frontend
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+Si ejecutas la API en tu máquina en el puerto 8080, instala dependencias y arranca Angular:
 
 ```bash
-ng test
+npm ci
+npm start
 ```
 
-## Running end-to-end tests
+`proxy.conf.json` reenvía `/api` a `http://127.0.0.1:8080`.
 
-For end-to-end (e2e) testing, run:
+## Compilar y probar
 
 ```bash
-ng e2e
+npm test -- --watch=false
+npm run build
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+Las pruebas de navegador requieren el backend, la base local y Chromium de Playwright:
 
-## Additional Resources
+```bash
+npx playwright install chromium
+npm run e2e
+```
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Variables locales
+
+Compose tiene valores de desarrollo por defecto. Para sobrescribirlos, copia `.env.example` como `.env` y cambia `DB_PASSWORD` y `JWT_SECRET`. El backend valida el secreto JWT y no imprime SQL por defecto.

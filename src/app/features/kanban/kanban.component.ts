@@ -1,82 +1,176 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { TaskModalComponent } from '../tasks/task-modal.component';
-import { Task, TaskStatus, TaskPriority } from '../../core/models';
+import { Project, Task, TaskPriority, TaskStatus, User } from '../../core/models';
+import { TaskService } from '../../core/services/task.service';
+import { AuthService } from '../../core/services/auth.service';
+import { ToastService } from '../../core/services/toast.service';
+import { ProjectService } from '../../core/services/project.service';
 
 @Component({
   selector: 'app-kanban',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, TaskModalComponent],
+  imports: [CommonModule, FormsModule, LucideAngularModule, TaskModalComponent],
   templateUrl: './kanban.component.html'
 })
-export class KanbanComponent {
+export class KanbanComponent implements OnInit {
+  private taskService = inject(TaskService);
+  public authService = inject(AuthService);
+  private toast = inject(ToastService);
+  private projectService = inject(ProjectService);
+
   isModalOpen = signal(false);
+  isLoading = signal(true);
+  editingTask = signal<Task | null>(null);
+  taskToDelete = signal<Task | null>(null);
+  searchQuery = signal('');
+  priorityFilter = signal<TaskPriority | 'ALL'>('ALL');
+  assigneeFilter = signal<string>('ALL');
+  projectFilter = signal<string>('ALL');
+  projects = signal<Project[]>([]);
+  tasks = signal<Task[]>([]);
 
-  tasks = signal<Task[]>([
-    {
-      id: 'TASK-101',
-      title: 'Ajustar la jerarquía de clases abstractas',
-      description: 'Refactorizar las firmas de los servicios core de infraestructura para delegar abstracciones tipadas.',
-      status: 'IN_PROGRESS',
-      priority: 'HIGH',
-      storyPoints: 5,
-      tags: ['Backend', 'Architecture'],
-      createdAt: '2026-06-22',
-      assignee: { id: '1', name: 'Santiago Muñoz', email: 'santiago@empresa.com', avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80' }
-    },
-    {
-      id: 'TASK-102',
-      title: 'Soporte nativo para Dark Mode en UI components',
-      description: 'Garantizar el cumplimiento estricto de contrastes con la paleta minimalista de zinc.',
-      status: 'TODO',
-      priority: 'MEDIUM',
-      storyPoints: 2,
-      tags: ['Design System', 'UX'],
-      createdAt: '2026-06-23',
-      assignee: { id: '2', name: 'Alba Castro', email: 'alba@empresa.com', avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80' }
-    },
-    {
-      id: 'TASK-103',
-      title: 'Integrar Lucide Angular Icons en el core de empaquetado',
-      description: 'Mitigar el bloating reduciendo el bundle size importando unicamente los glifos requeridos.',
-      status: 'REVIEW',
-      priority: 'LOW',
-      storyPoints: 1,
-      tags: ['Frontend'],
-      createdAt: '2026-06-24',
-      assignee: { id: '1', name: 'Santiago Muñoz', email: 'santiago@empresa.com', avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80' }
+  statusOptions: { value: TaskStatus; label: string }[] = [
+    { value: 'TODO', label: 'Por hacer' },
+    { value: 'IN_PROGRESS', label: 'En progreso' },
+    { value: 'REVIEW', label: 'En revisión' },
+    { value: 'IMPEDIMENT', label: 'Bloqueado' },
+    { value: 'DONE', label: 'Finalizado' }
+  ];
+
+  assignees = computed(() => {
+    const users = new Map<string, User>();
+    for (const task of this.tasks()) {
+      if (task.assignee.id) users.set(task.assignee.id, task.assignee);
     }
-  ]);
+    return [...users.values()];
+  });
 
-  todoTasks = computed(() => this.tasks().filter(t => t.status === 'TODO'));
-  inProgressTasks = computed(() => this.tasks().filter(t => t.status === 'IN_PROGRESS'));
-  reviewTasks = computed(() => this.tasks().filter(t => t.status === 'REVIEW'));
-  impededTasks = computed(() => this.tasks().filter(t => (t.status as any) === 'IMPEDIMENT')); // 🚀 Solución al error de comparación
-  doneTasks = computed(() => this.tasks().filter(t => t.status === 'DONE'));
+  filteredTasks = computed(() => {
+    const query = this.searchQuery().trim().toLowerCase();
+    return this.tasks().filter(task => {
+      const matchesText = !query || `${task.title} ${task.description} ${task.tags.join(' ')}`.toLowerCase().includes(query);
+      const matchesPriority = this.priorityFilter() === 'ALL' || task.priority === this.priorityFilter();
+      const matchesAssignee = this.assigneeFilter() === 'ALL' || task.assignee.id === this.assigneeFilter();
+      const matchesProject = this.projectFilter() === 'ALL'
+        || (this.projectFilter() === 'NONE' ? !task.projectId : task.projectId === this.projectFilter());
+      return matchesText && matchesPriority && matchesAssignee && matchesProject;
+    });
+  });
 
-  openCreateModal() {
+  todoTasks = computed(() => this.filteredTasks().filter(task => task.status === 'TODO'));
+  inProgressTasks = computed(() => this.filteredTasks().filter(task => task.status === 'IN_PROGRESS'));
+  reviewTasks = computed(() => this.filteredTasks().filter(task => task.status === 'REVIEW'));
+  impededTasks = computed(() => this.filteredTasks().filter(task => task.status === 'IMPEDIMENT'));
+  doneTasks = computed(() => this.filteredTasks().filter(task => task.status === 'DONE'));
+
+  tasksForStatus(status: TaskStatus): Task[] {
+    return this.filteredTasks().filter(task => task.status === status);
+  }
+
+  ngOnInit(): void {
+    this.loadTasks();
+    this.projectService.getProjects().subscribe({
+      next: projects => this.projects.set(projects),
+      error: err => this.toast.errorFor(err, 'No se pudieron cargar los proyectos para filtrar.')
+    });
+  }
+
+  loadTasks(): void {
+    this.isLoading.set(true);
+    this.taskService.getTasks().subscribe({
+      next: tasks => {
+        this.tasks.set(tasks);
+        this.isLoading.set(false);
+      },
+      error: err => {
+        this.toast.errorFor(err, 'No se pudieron cargar las tareas.');
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  openCreateModal(): void {
+    if (!this.authService.canManageTasks()) {
+      this.toast.error('Tu rol no permite crear tareas.', 'Permiso insuficiente');
+      return;
+    }
+    this.editingTask.set(null);
     this.isModalOpen.set(true);
   }
 
-  closeCreateModal() {
-    this.isModalOpen.set(false);
+  openEditModal(task: Task): void {
+    this.editingTask.set(task);
+    this.isModalOpen.set(true);
   }
 
-  handleTaskCreated(taskPayload: Partial<Task>) {
-    const completeTask: Task = {
-      id: `TASK-${Math.floor(100 + Math.random() * 900)}`,
-      title: taskPayload.title || 'Untitled task',
-      description: taskPayload.description || '',
-      status: taskPayload.status || 'TODO',
-      priority: taskPayload.priority || 'MEDIUM',
-      storyPoints: taskPayload.storyPoints || 1,
-      tags: taskPayload.tags || ['Feature'],
-      createdAt: taskPayload.createdAt || new Date().toISOString(),
-      assignee: taskPayload.assignee || { id: '1', name: 'Guest', email: 'guest@empresa.com' }
-    };
+  closeTaskModal(): void {
+    this.isModalOpen.set(false);
+    this.editingTask.set(null);
+  }
 
-    this.tasks.update(all => [...all, completeTask]);
+  saveTask(payload: Partial<Task>): void {
+    const editing = this.editingTask();
+    if (!editing && !this.authService.canManageTasks()) {
+      this.toast.error('Tu rol no permite crear tareas.', 'Permiso insuficiente');
+      return;
+    }
+    const request = editing
+      ? this.taskService.updateTask(editing.id, payload)
+      : this.taskService.createTask(payload);
+    request.subscribe({
+      next: task => {
+        this.tasks.update(tasks => editing
+          ? tasks.map(item => item.id === task.id ? task : item)
+          : [...tasks, task]);
+        this.closeTaskModal();
+        this.toast.success(editing ? 'La tarea se actualizó.' : 'La tarea se creó.');
+      },
+      error: err => this.toast.errorFor(err, 'No se pudo guardar la tarea.')
+    });
+  }
+
+  setTaskStatus(task: Task, status: TaskStatus): void {
+    if (task.status === status) return;
+    const previousStatus = task.status;
+    this.tasks.update(tasks => tasks.map(item => item.id === task.id ? { ...item, status } : item));
+    this.taskService.updateTaskStatus(task.id, status).subscribe({
+      next: updated => this.tasks.update(tasks => tasks.map(item => item.id === updated.id ? updated : item)),
+      error: err => {
+        this.tasks.update(tasks => tasks.map(item => item.id === task.id ? { ...item, status: previousStatus } : item));
+        this.toast.errorFor(err, 'No se pudo actualizar el estado de la tarea.');
+      }
+    });
+  }
+
+  requestDelete(task: Task): void {
+    this.taskToDelete.set(task);
+  }
+
+  cancelDelete(): void {
+    this.taskToDelete.set(null);
+  }
+
+  confirmDelete(): void {
+    const task = this.taskToDelete();
+    if (!task) return;
+    this.taskService.deleteTask(task.id).subscribe({
+      next: () => {
+        this.tasks.update(tasks => tasks.filter(item => item.id !== task.id));
+        this.taskToDelete.set(null);
+        this.toast.success('La tarea se eliminó.');
+      },
+      error: err => this.toast.errorFor(err, 'No se pudo eliminar la tarea.')
+    });
+  }
+
+  clearFilters(): void {
+    this.searchQuery.set('');
+    this.priorityFilter.set('ALL');
+    this.assigneeFilter.set('ALL');
+    this.projectFilter.set('ALL');
   }
 
   getPriorityClass(priority: TaskPriority): string {
@@ -86,14 +180,5 @@ export class KanbanComponent {
       case 'MEDIUM': return 'bg-zinc-800 text-zinc-300 border border-zinc-700';
       case 'LOW': return 'bg-zinc-900/40 text-zinc-500 border border-zinc-800/80';
     }
-  }
-
-  cycleStatus(task: Task) {
-    // 🚀 Solución al error de asignación usando un cast manual a string array
-    const states = ['TODO', 'IN_PROGRESS', 'REVIEW', 'IMPEDIMENT', 'DONE'];
-    const nextIndex = (states.indexOf(task.status) + 1) % states.length;
-    const nextStatus = states[nextIndex] as TaskStatus;
-
-    this.tasks.update(all => all.map(t => t.id === task.id ? { ...t, status: nextStatus } : t));
   }
 }

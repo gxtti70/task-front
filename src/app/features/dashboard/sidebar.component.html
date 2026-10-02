@@ -1,6 +1,7 @@
 <div class="h-screen bg-zinc-950 border-r border-zinc-800 flex flex-col transition-all duration-200 relative"
      [ngClass]="isCollapsed() ? 'w-16' : 'w-64'">
 
+  <!-- Header / Logo -->
   <div class="h-14 flex items-center px-4 border-b border-zinc-800 justify-between">
     <div class="flex items-center gap-2.5 overflow-hidden">
       <div class="h-7 w-7 bg-white rounded flex items-center justify-center shrink-0">
@@ -12,6 +13,7 @@
     </div>
   </div>
 
+  <!-- Links de Navegación -->
   <div class="flex-1 py-4 px-2 space-y-1">
     <a routerLink="/dashboard/kanban" routerLinkActive="bg-zinc-900 text-white"
        class="flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-zinc-200 rounded-lg text-sm transition-colors group">
@@ -21,11 +23,29 @@
       }
     </a>
 
+    <!-- SECCIÓN EXCLUSIVA DE ADMINISTRADOR -->
+    @if (isAdmin()) {
+      <div class="pt-2 mt-2 border-t border-zinc-900">
+        @if (!isCollapsed()) {
+          <span class="px-3 text-[10px] font-semibold text-amber-500 uppercase tracking-wider block mb-2">Administración</span>
+        }
+        <a routerLink="/dashboard/admin/users" routerLinkActive="bg-zinc-900 text-white"
+           class="flex items-center gap-3 px-3 py-2 text-amber-400 hover:text-amber-300 rounded-lg text-sm transition-colors group">
+          <lucide-icon name="shield-alert" class="h-4 w-4 group-hover:text-amber-300"></lucide-icon>
+          @if (!isCollapsed()) {
+            <span class="animate-fade-in">Gestión de Usuarios</span>
+          }
+        </a>
+      </div>
+    }
+
+    <!-- Proyectos -->
     <div class="pt-4 mt-2 border-t border-zinc-900">
       @if (!isCollapsed()) {
         <span class="px-3 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider block mb-2">Proyectos</span>
       }
-      <a class="flex items-center gap-3 px-3 py-2 text-zinc-500 rounded-lg text-sm cursor-not-allowed">
+      <a routerLink="/dashboard/projects" routerLinkActive="bg-zinc-900 text-white"
+         class="flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-zinc-200 rounded-lg text-sm">
         <lucide-icon name="folder" class="h-4 w-4"></lucide-icon>
         @if (!isCollapsed()) {
           <span class="animate-fade-in text-xs">Core Platform</span>
@@ -34,23 +54,34 @@
     </div>
   </div>
 
+  <!-- Botón colapsar -->
   <button (click)="toggleSidebar()"
-          class="absolute -right-3 top-16 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white rounded-full p-1 shadow-md transition-transform hidden md:block">
+          class="absolute -right-3 top-16 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white rounded-full p-1 shadow-md transition-transform hidden md:block z-10">
     <lucide-icon [name]="isCollapsed() ? 'chevron-right' : 'chevron-left'" class="h-3 w-3"></lucide-icon>
   </button>
 
+  <!-- Perfil de Usuario y Logout -->
   <div class="p-3 border-t border-zinc-800 flex items-center justify-between">
     <div class="flex items-center gap-2.5 overflow-hidden">
-      <img [src]="authService.currentUser()?.avatarUrl" class="h-7 w-7 rounded-full bg-zinc-800 object-cover border border-zinc-700 shrink-0" alt="Avatar">
+      <img [src]="avatarUrl()"
+           class="h-7 w-7 rounded-full bg-zinc-800 object-cover border border-zinc-700 shrink-0"
+           [alt]="displayName()">
       @if (!isCollapsed()) {
         <div class="flex flex-col overflow-hidden animate-fade-in">
-          <span class="text-xs font-medium text-zinc-200 truncate">{{ authService.currentUser()?.name }}</span>
-          <span class="text-[10px] text-zinc-500 truncate">{{ authService.currentUser()?.email }}</span>
+          <span class="text-xs font-medium text-zinc-200 truncate">{{ displayName() }}</span>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] text-zinc-500 truncate">{{ currentUser()?.email }}</span>
+          </div>
+          <!-- Badge dinámico del rol -->
+          <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded w-fit mt-0.5"
+                [ngClass]="isAdmin() ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-zinc-800 text-zinc-400'">
+            {{ userRole() }}
+          </span>
         </div>
       }
     </div>
     @if (!isCollapsed()) {
-      <button (click)="authService.logout()" class="text-zinc-500 hover:text-white transition-colors p-1 rounded hover:bg-zinc-900 animate-fade-in">
+      <button (click)="authService.logout()" class="text-zinc-500 hover:text-white transition-colors p-1 rounded hover:bg-zinc-900 animate-fade-in" title="Cerrar sesión">
         <lucide-icon name="log-out" class="h-3.5 w-3.5"></lucide-icon>
       </button>
     }

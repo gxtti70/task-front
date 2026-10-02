@@ -1,0 +1,58 @@
+<section class="space-y-6">
+  <header>
+    <h1 class="text-xl font-semibold text-white">Gestión de Usuarios</h1>
+    <p class="mt-1 text-xs text-zinc-500">Consulta usuarios y crea cuentas con un rol asignado.</p>
+  </header>
+
+  <form (ngSubmit)="createUser()" class="grid gap-3 rounded-xl border border-zinc-800 bg-zinc-950 p-4 md:grid-cols-2">
+    <label class="space-y-1 text-xs text-zinc-400">Nombre completo
+      <input [(ngModel)]="newUser.fullName" name="fullName" required class="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-white" />
+    </label>
+    <label class="space-y-1 text-xs text-zinc-400">Correo
+      <input [(ngModel)]="newUser.email" name="email" type="email" required class="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-white" />
+    </label>
+    <label class="space-y-1 text-xs text-zinc-400">Contraseña
+      <input [(ngModel)]="newUser.password" name="password" type="password" minlength="6" required class="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-white" />
+    </label>
+    <label class="space-y-1 text-xs text-zinc-400">Rol
+      <select [(ngModel)]="newUser.role" name="role" class="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-white">
+        <option value="DEVELOPER">Developer</option>
+        <option value="SCRUM">Scrum</option>
+        <option value="MANAGER">Manager</option>
+        <option value="ADMIN">Admin</option>
+      </select>
+    </label>
+    <button type="submit" [disabled]="isSaving()" class="rounded-lg bg-white px-4 py-2 text-xs font-medium text-black disabled:opacity-50 md:col-span-2">
+      {{ isSaving() ? 'Creando...' : 'Crear usuario' }}
+    </button>
+  </form>
+
+  <div class="overflow-hidden rounded-xl border border-zinc-800">
+    @if (isLoading()) {
+      <p class="p-4 text-xs text-zinc-500">Cargando usuarios...</p>
+    } @else if (users().length === 0) {
+      <p class="p-4 text-xs text-zinc-500">No hay usuarios para mostrar.</p>
+    } @else {
+      <div class="divide-y divide-zinc-800">
+        @for (user of users(); track user.id) {
+          <div class="flex items-center justify-between gap-4 bg-zinc-950 px-4 py-3">
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm text-white">{{ user.fullName }}</p>
+              <p class="truncate text-xs text-zinc-500">{{ user.email }} · {{ user.active ? 'Activo' : 'Desactivado' }}</p>
+            </div>
+            <select [ngModel]="user.role" (ngModelChange)="updateUser(user, { role: $event })" [name]="'role-' + user.id"
+              [disabled]="updatingUserId() === user.id" class="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-[10px] uppercase text-zinc-300">
+              <option value="DEVELOPER">Developer</option><option value="SCRUM">Scrum</option>
+              <option value="MANAGER">Manager</option><option value="ADMIN">Admin</option>
+            </select>
+            <button (click)="updateUser(user, { active: !user.active })" [disabled]="updatingUserId() === user.id"
+              class="rounded border px-2 py-1 text-[10px] disabled:opacity-40"
+              [ngClass]="user.active ? 'border-red-950 text-red-400 hover:bg-red-950/40' : 'border-emerald-950 text-emerald-400 hover:bg-emerald-950/40'">
+              {{ user.active ? 'Desactivar' : 'Reactivar' }}
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</section>

@@ -1,0 +1,111 @@
+<section class="flex h-full flex-col space-y-6">
+  <header class="flex items-center justify-between gap-4">
+    <div>
+      <h1 class="text-xl font-semibold tracking-tight text-white">Proyectos</h1>
+      <p class="mt-0.5 text-xs text-zinc-500">Gestión y monitoreo de módulos de software</p>
+    </div>
+    @if (authService.canManageTasks()) {
+      <button (click)="openCreateModal()" class="flex items-center gap-1.5 rounded-lg bg-white px-3.5 py-2 text-xs font-medium text-black hover:bg-zinc-200">
+        <lucide-icon name="plus" class="h-3.5 w-3.5"></lucide-icon> Nuevo Proyecto
+      </button>
+    }
+  </header>
+
+  @if (isLoading()) {
+    <p class="text-xs text-zinc-500">Cargando proyectos...</p>
+  } @else if (projects().length === 0) {
+    <p class="rounded-xl border border-dashed border-zinc-800 p-8 text-center text-xs text-zinc-500">Todavía no hay proyectos.</p>
+  } @else {
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      @for (project of projects(); track project.id) {
+        <article class="flex flex-col justify-between rounded-xl border border-zinc-900 bg-zinc-950/60 p-5 shadow-sm transition hover:border-zinc-700">
+          <div>
+            <div class="mb-3 flex items-center justify-between gap-2">
+              <span class="truncate font-mono text-[10px] font-semibold text-zinc-500">{{ project.id }}</span>
+              <span class="rounded border px-2 py-0.5 text-[10px] font-medium"
+                [ngClass]="project.status === 'ARCHIVED' ? 'border-zinc-800 bg-zinc-900 text-zinc-500' : project.status === 'ACTIVE' ? 'border-emerald-900/50 bg-emerald-950/50 text-emerald-400' : 'border-amber-900/50 bg-amber-950/40 text-amber-400'">
+                {{ project.status }}
+              </span>
+            </div>
+            <h2 class="text-sm font-semibold text-zinc-100">{{ project.name }}</h2>
+            <p class="mt-1.5 line-clamp-2 text-xs leading-relaxed text-zinc-500">{{ project.description || 'Sin descripción' }}</p>
+          </div>
+          <footer class="mt-4 space-y-3 border-t border-zinc-900 pt-3">
+            <div class="flex items-center justify-between text-[10px] text-zinc-500">
+              <span>{{ project.tasksCount }} tareas · {{ project.membersCount }} miembros</span>
+              <span>{{ project.createdAt | date:'mediumDate' }}</span>
+            </div>
+            @if (canManage(project)) {
+              <div class="flex flex-wrap gap-2">
+                <button (click)="openEditModal(project)" class="rounded-md border border-zinc-800 px-2.5 py-1.5 text-[10px] text-zinc-300 hover:bg-zinc-900">Editar</button>
+                <button (click)="openMembers(project)" class="rounded-md border border-zinc-800 px-2.5 py-1.5 text-[10px] text-zinc-300 hover:bg-zinc-900">Miembros</button>
+                @if (project.status !== 'ARCHIVED') {
+                  <button (click)="archiveProject(project)" class="rounded-md border border-amber-950 px-2.5 py-1.5 text-[10px] text-amber-400 hover:bg-amber-950/40">Archivar</button>
+                }
+              </div>
+            }
+          </footer>
+        </article>
+      }
+    </div>
+  }
+</section>
+
+@if (isModalOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" (click)="closeModal()">
+    <section class="w-full max-w-md space-y-4 rounded-xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl" (click)="$event.stopPropagation()">
+      <h2 class="text-base font-semibold text-white">{{ editingProject() ? 'Editar proyecto' : 'Crear proyecto' }}</h2>
+      <label class="block text-xs text-zinc-400">Nombre
+        <input [(ngModel)]="newProject.name" name="projectName" required maxlength="255" class="mt-1 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white" />
+      </label>
+      <label class="block text-xs text-zinc-400">Descripción
+        <textarea [(ngModel)]="newProject.description" name="projectDescription" rows="3" maxlength="255" class="mt-1 w-full resize-none rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white"></textarea>
+      </label>
+      <label class="block text-xs text-zinc-400">Estado
+        <select [(ngModel)]="newProject.status" name="projectStatus" class="mt-1 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white">
+          <option value="ACTIVE">Activo</option><option value="ON_HOLD">En pausa</option><option value="COMPLETED">Completado</option>
+          @if (editingProject()?.status === 'ARCHIVED') { <option value="ARCHIVED">Archivado</option> }
+        </select>
+      </label>
+      <div class="flex justify-end gap-2 border-t border-zinc-900 pt-3">
+        <button (click)="closeModal()" class="rounded-lg px-3.5 py-2 text-xs text-zinc-400 hover:bg-zinc-900 hover:text-white">Cancelar</button>
+        <button (click)="saveProject()" [disabled]="isSaving()" class="rounded-lg bg-white px-3.5 py-2 text-xs font-medium text-black disabled:opacity-50">{{ isSaving() ? 'Guardando...' : 'Guardar' }}</button>
+      </div>
+    </section>
+  </div>
+}
+
+@if (selectedProject(); as project) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" (click)="closeMembers()">
+    <section class="w-full max-w-lg space-y-4 rounded-xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl" (click)="$event.stopPropagation()">
+      <header class="flex items-start justify-between">
+        <div><h2 class="text-base font-semibold text-white">Miembros</h2><p class="mt-1 text-xs text-zinc-500">{{ project.name }}</p></div>
+        <button (click)="closeMembers()" class="text-zinc-500 hover:text-white" aria-label="Cerrar">×</button>
+      </header>
+      <div class="flex gap-2">
+        <select [(ngModel)]="selectedUserId" name="memberUserId" class="min-w-0 flex-1 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-white">
+          <option value="">Selecciona una persona</option>
+          @for (user of availableUsers(); track user.id) { <option [value]="user.id">{{ user.name || user.email }}</option> }
+        </select>
+        <button (click)="addMember()" [disabled]="!selectedUserId" class="rounded-lg bg-white px-3 py-2 text-xs font-medium text-black disabled:opacity-40">Agregar</button>
+      </div>
+      @if (isLoadingMembers()) {
+        <p class="py-5 text-center text-xs text-zinc-500">Cargando miembros...</p>
+      } @else {
+        <div class="max-h-72 divide-y divide-zinc-800 overflow-y-auto rounded-lg border border-zinc-800">
+          @for (member of members(); track member.id) {
+            <div class="flex items-center justify-between gap-3 px-3 py-2.5">
+              <div class="min-w-0"><p class="truncate text-xs text-white">{{ member.fullName }}</p><p class="truncate text-[10px] text-zinc-500">{{ member.email }} · {{ member.role }}</p></div>
+              @if (member.id !== project.ownerId) {
+                <button (click)="removeMember(member)" class="shrink-0 text-[10px] text-red-400 hover:text-red-300">Quitar</button>
+              } @else { <span class="text-[10px] text-zinc-600">Propietario</span> }
+            </div>
+          } @empty {
+            <p class="p-4 text-center text-xs text-zinc-500">Sin miembros.</p>
+          }
+        </div>
+      }
+      <div class="flex justify-end"><button (click)="closeMembers()" class="rounded-lg border border-zinc-800 px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-900">Cerrar</button></div>
+    </section>
+  </div>
+}
