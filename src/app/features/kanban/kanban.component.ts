@@ -1,32 +1,48 @@
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { LucideAngularModule } from 'lucide-angular';
 import { TaskModalComponent } from '../tasks/task-modal.component';
+import { TaskCommentsComponent } from '../tasks/task-comments.component';
+import { TaskAttachmentsComponent } from '../tasks/task-attachments.component';
 import { Project, Task, TaskPriority, TaskStatus, User } from '../../core/models';
 import { TaskService } from '../../core/services/task.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ProjectService } from '../../core/services/project.service';
+import { FeatureGateService } from '../../core/services/feature-gate.service';
+import { FocusTrapDirective } from '../../shared/directives/focus-trap.directive';
+import { SkeletonComponent } from '../../shared/ui/skeleton.component';
 
 @Component({
   selector: 'app-kanban',
   standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule, LucideAngularModule, TaskModalComponent],
+  imports: [CommonModule, FormsModule, DragDropModule, LucideAngularModule, TaskModalComponent, TaskCommentsComponent, TaskAttachmentsComponent, FocusTrapDirective, SkeletonComponent],
   templateUrl: './kanban.component.html'
 })
 export class KanbanComponent implements OnInit {
   private taskService = inject(TaskService);
+  private route = inject(ActivatedRoute);
   public authService = inject(AuthService);
   private toast = inject(ToastService);
   private projectService = inject(ProjectService);
+  public featureGate = inject(FeatureGateService);
 
   isModalOpen = signal(false);
   isLoading = signal(true);
   editingTask = signal<Task | null>(null);
+  commentingTask = signal<Task | null>(null);
+  attachingTask = signal<Task | null>(null);
   taskToDelete = signal<Task | null>(null);
   searchQuery = signal('');
+  readonly today = (() => {
+    const date = new Date();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${date.getFullYear()}-${month}-${day}`;
+  })();
   priorityFilter = signal<TaskPriority | 'ALL'>('ALL');
   assigneeFilter = signal<string>('ALL');
   projectFilter = signal<string>('ALL');
@@ -83,6 +99,10 @@ export class KanbanComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.route.queryParamMap.subscribe(params => {
+      const query = params.get('q');
+      this.searchQuery.set(query ?? '');
+    });
     this.loadTasks();
     this.projectService.getProjects().subscribe({
       next: projects => this.projects.set(projects),

@@ -1,10 +1,12 @@
 import { TestBed } from '@angular/core/testing';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../../core/services/auth.service';
 import { ProjectService } from '../../core/services/project.service';
 import { TaskService } from '../../core/services/task.service';
 import { ToastService } from '../../core/services/toast.service';
+import { FeatureGateService } from '../../core/services/feature-gate.service';
 import { KanbanComponent } from './kanban.component';
 
 describe('KanbanComponent task creation permissions', () => {
@@ -23,7 +25,9 @@ describe('KanbanComponent task creation permissions', () => {
         { provide: AuthService, useValue: { canManageTasks: () => canManageTasks } },
         { provide: TaskService, useValue: taskService },
         { provide: ProjectService, useValue: { getProjects: () => of([]) } },
-        { provide: ToastService, useValue: toast }
+        { provide: FeatureGateService, useValue: { canUseAttachments: () => false } },
+        { provide: ToastService, useValue: toast },
+        { provide: ActivatedRoute, useValue: { queryParamMap: of(convertToParamMap({})) } }
       ]
     });
   });
@@ -50,5 +54,21 @@ describe('KanbanComponent task creation permissions', () => {
     fixture.componentInstance.saveTask({ title: 'Test' });
 
     expect(taskService.createTask).toHaveBeenCalledOnce();
+  });
+
+  it('combines text, priority, assignee, and project filters', () => {
+    const component = TestBed.createComponent(KanbanComponent).componentInstance;
+    component.tasks.set([
+      { id: '1', title: 'Fix login', description: 'JWT refresh', status: 'TODO', priority: 'HIGH', storyPoints: 2, assignee: { id: 'u1', email: 'dev@example.test' }, tags: ['auth'], projectId: 'p1', createdAt: '' },
+      { id: '2', title: 'Update docs', description: 'README', status: 'TODO', priority: 'LOW', storyPoints: 1, assignee: { id: 'u2', email: 'writer@example.test' }, tags: ['docs'], projectId: 'p2', createdAt: '' }
+    ]);
+    component.searchQuery.set('jwt');
+    component.priorityFilter.set('HIGH');
+    component.assigneeFilter.set('u1');
+    component.projectFilter.set('p1');
+
+    expect(component.filteredTasks().map(task => task.id)).toEqual(['1']);
+    component.projectFilter.set('p2');
+    expect(component.filteredTasks()).toEqual([]);
   });
 });

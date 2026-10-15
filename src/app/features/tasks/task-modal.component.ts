@@ -6,11 +6,12 @@ import { Project, Task, TaskPriority, TaskStatus, User } from '../../core/models
 import { ProjectService } from '../../core/services/project.service';
 import { UserDirectoryService } from '../../core/services/user-directory.service';
 import { ToastService } from '../../core/services/toast.service';
+import { FocusTrapDirective } from '../../shared/directives/focus-trap.directive';
 
 @Component({
   selector: 'app-task-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, FocusTrapDirective],
   templateUrl: './task-modal.component.html'
 })
 export class TaskModalComponent implements OnInit {
@@ -31,6 +32,7 @@ export class TaskModalComponent implements OnInit {
   tagsString = '';
   projectId = '';
   assigneeId = '';
+  dueDate = '';
 
   ngOnInit(): void {
     if (this.task) {
@@ -42,6 +44,7 @@ export class TaskModalComponent implements OnInit {
       this.tagsString = this.task.tags.join(', ');
       this.projectId = this.task.projectId || '';
       this.assigneeId = this.task.assignee.id || '';
+      this.dueDate = this.task.dueDate || '';
     }
     this.projectService.getProjects().subscribe({
       next: projects => this.projects.set(projects.filter(project => project.status !== 'ARCHIVED')),
@@ -69,6 +72,7 @@ export class TaskModalComponent implements OnInit {
       priority: this.priority,
       status: this.status,
       storyPoints: this.storyPoints,
+      dueDate: this.dueDate || null,
       tags,
       projectId: this.projectId || null,
       assigneeId: this.assigneeId || undefined

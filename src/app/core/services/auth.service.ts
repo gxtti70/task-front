@@ -2,8 +2,8 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, throwError } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
-import { AuthResponse, User } from '../models';
+import { tap, catchError, finalize, shareReplay, map } from 'rxjs/operators';
+import { AuthResponse, ProfileUpdateRequest, User } from '../models';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
@@ -13,6 +13,7 @@ export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
   private readonly API_URL = `${environment.apiUrl}/auth`;
+  private refreshInFlight: Observable<{ accessToken: string }> | null = null;
 
   // State Management nativo con Signals
   private _accessToken = signal<string | null>(
@@ -89,6 +90,29 @@ export class AuthService {
     );
   }
 
+  loadProfile(): Observable<User> {
+    return this.http.get<User>(`${this.API_URL}/me`).pipe(
+      tap(profile => this.setCurrentProfile(profile))
+    );
+  }
+
+  updateProfile(profile: ProfileUpdateRequest): Observable<User> {
+    return this.http.patch<User>(`${this.API_URL}/me`, profile).pipe(
+      tap(profile => this.setCurrentProfile(profile))
+    );
+  }
+
+  private setCurrentProfile(profile: User): void {
+    const user = {
+      ...(this._currentUser() ?? {}),
+      ...profile,
+      name: profile.fullName || profile.name || 'Usuario',
+      avatarUrl: profile.avatarData || undefined
+    } as User;
+    this._currentUser.set(user);
+    localStorage.setItem('user', JSON.stringify(user));
+  }
+
   register(payload: { fullName: string; email: string; password: string }): Observable<string> {
     return this.http.post(`${this.API_URL}/register`, payload, { responseType: 'text' }).pipe(
       catchError(err => {
@@ -97,9 +121,24 @@ export class AuthService {
     );
   }
 
+  forgotPassword(email: string): Observable<string> {
+    return this.http.post<{ message: string }>(`${this.API_URL}/forgot-password`, { email }).pipe(
+      map(res => res.message),
+      catchError(err => throwError(() => err))
+    );
+  }
+
+  resetPassword(token: string, password: string): Observable<string> {
+    return this.http.post<{ message: string }>(`${this.API_URL}/reset-password`, { token, password }).pipe(
+      map(res => res.message),
+      catchError(err => throwError(() => err))
+    );
+  }
+
   refreshToken(): Observable<{ accessToken: string }> {
+    if (this.refreshInFlight) return this.refreshInFlight;
     const refresh = localStorage.getItem('refresh_token');
-    return this.http.post<{ accessToken: string }>(`${this.API_URL}/refresh`, { refreshToken: refresh }).pipe(
+    this.refreshInFlight = this.http.post<{ accessToken: string }>(`${this.API_URL}/refresh`, { refreshToken: refresh }).pipe(
       tap(res => {
         this._accessToken.set(res.accessToken);
         localStorage.setItem('access_token', res.accessToken);
@@ -108,8 +147,11 @@ export class AuthService {
       catchError(err => {
         this.logout();
         return throwError(() => err);
-      })
+      }),
+      finalize(() => { this.refreshInFlight = null; }),
+      shareReplay({ bufferSize: 1, refCount: false })
     );
+    return this.refreshInFlight;
   }
 
   logout(): void {
@@ -132,7 +174,8 @@ export class AuthService {
       ...rawUser,
       email: rawUser.email || authRes.email,
       role: rawUser.role || authRes.role,
-      name: rawUser.name || rawUser.fullName || authRes.email?.split('@')[0] || 'Usuario'
+      fullName: rawUser.fullName || authRes.fullName,
+      name: rawUser.fullName || rawUser.name || authRes.fullName || authRes.email?.split('@')[0] || 'Usuario'
     };
 
     this._currentUser.set(normalizedUser);

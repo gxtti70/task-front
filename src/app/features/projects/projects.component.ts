@@ -1,29 +1,48 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal, DestroyRef } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { forkJoin } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Project, ProjectMember, ProjectRequest, User } from '../../core/models';
 import { ProjectService } from '../../core/services/project.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { UserDirectoryService } from '../../core/services/user-directory.service';
+import { SubscriptionService } from '../../core/services/subscription.service';
+import { FeatureGateService } from '../../core/services/feature-gate.service';
+import { FocusTrapDirective } from '../../shared/directives/focus-trap.directive';
+import { SkeletonComponent } from '../../shared/ui/skeleton.component';
+import { EmptyStateComponent } from '../../shared/ui/empty-state.component';
 
 @Component({
   selector: 'app-projects',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, FocusTrapDirective, SkeletonComponent, EmptyStateComponent],
   templateUrl: './projects.component.html'
 })
 export class ProjectsComponent implements OnInit {
-  private projectService = inject(ProjectService);
+  readonly projectService = inject(ProjectService);
   private userDirectory = inject(UserDirectoryService);
   private toast = inject(ToastService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private destroyRef = inject(DestroyRef);
+  readonly subscription = inject(SubscriptionService);
+  readonly featureGate = inject(FeatureGateService);
   authService = inject(AuthService);
   isModalOpen = signal(false);
   isLoading = signal(true);
   isSaving = signal(false);
   projects = signal<Project[]>([]);
+  favoritesOnly = signal(false);
+  visibleProjects = computed(() => {
+    const projects = this.projects();
+    if (!this.favoritesOnly()) return projects;
+    const favoriteIds = new Set(this.projectService.favoriteProjects().map(project => project.id));
+    return projects.filter(project => favoriteIds.has(project.id));
+  });
   editingProject = signal<Project | null>(null);
   selectedProject = signal<Project | null>(null);
   members = signal<ProjectMember[]>([]);
@@ -41,13 +60,15 @@ export class ProjectsComponent implements OnInit {
   newProject: ProjectRequest = { name: '', description: '', status: 'ACTIVE' };
 
   ngOnInit(): void {
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params =>
+      this.favoritesOnly.set(params.get('favoritesOnly') === 'true'));
     this.loadProjects();
   }
 
   loadProjects(): void {
     this.isLoading.set(true);
-    this.projectService.getProjects().subscribe({
-      next: projects => {
+    forkJoin({ projects: this.projectService.getProjects(), favorites: this.projectService.loadFavoriteProjects() }).subscribe({
+      next: ({ projects }) => {
         this.projects.set(projects);
         this.isLoading.set(false);
       },
@@ -58,6 +79,14 @@ export class ProjectsComponent implements OnInit {
     });
   }
 
+  toggleFavorite(project: Project): void {
+    const shouldFavorite = !this.projectService.isFavorite(project.id);
+    this.projectService.setFavorite(project, shouldFavorite).subscribe({
+      next: () => this.toast.success(shouldFavorite ? 'Proyecto agregado a favoritos.' : 'Proyecto quitado de favoritos.'),
+      error: err => this.toast.errorFor(err, 'No se pudo actualizar el favorito. Solo los miembros pueden guardar proyectos.')
+    });
+  }
+
   canManage(project: Project): boolean {
     return this.authService.isAdmin() || this.authService.currentUser()?.id === project.ownerId;
   }
@@ -65,6 +94,11 @@ export class ProjectsComponent implements OnInit {
   openCreateModal(): void {
     if (!this.authService.canManageTasks()) {
       this.toast.error('Tu rol no permite crear proyectos.', 'Permiso insuficiente');
+      return;
+    }
+    if (!this.featureGate.canCreateProject()) {
+      this.toast.info('Tu plan ya llegó al máximo de proyectos. Elige otro plan para crear uno más.', 'Límite del plan alcanzado');
+      void this.router.navigateByUrl('/dashboard/subscription');
       return;
     }
     this.editingProject.set(null);
@@ -152,9 +186,17 @@ export class ProjectsComponent implements OnInit {
   }
 
   toggleInitialMember(userId: string, selected: boolean): void {
+    if (selected && !this.featureGate.canAddMember(1 + this.selectedInitialMemberIds().length)) {
+      this.toast.info('Tu plan limita la cantidad de miembros por proyecto. Puedes elegir otro plan.', 'Límite de miembros');
+      return;
+    }
     this.selectedInitialMemberIds.update(ids => selected
       ? ids.includes(userId) ? ids : [...ids, userId]
       : ids.filter(id => id !== userId));
+  }
+
+  toggleInitialMemberFromEvent(userId: string, event: Event): void {
+    this.toggleInitialMember(userId, (event.target as HTMLInputElement).checked);
   }
 
   private loadUsers(): void {
@@ -207,6 +249,10 @@ export class ProjectsComponent implements OnInit {
   addMember(): void {
     const project = this.selectedProject();
     if (!project || !this.selectedUserId) return;
+    if (!this.featureGate.canAddMember(this.members().length)) {
+      this.toast.info('Este proyecto alcanzó el máximo de miembros de tu plan.', 'Límite de miembros');
+      return;
+    }
     this.projectService.addMember(project.id, this.selectedUserId).subscribe({
       next: member => {
         this.members.update(members => [...members, member]);

@@ -1,13 +1,20 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from './sidebar.component';
 import { TopbarComponent } from './topbar.component';
+import { AnnouncementService } from '../../core/services/announcement.service';
+import { SubscriptionService } from '../../core/services/subscription.service';
+import { AuthService } from '../../core/services/auth.service';
+import { Announcement } from '../../core/models';
+import { FocusTrapDirective } from '../../shared/directives/focus-trap.directive';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, SidebarComponent, TopbarComponent],
+  imports: [CommonModule, RouterOutlet, SidebarComponent, TopbarComponent, FocusTrapDirective],
   template: `
     <div class="flex h-screen w-screen overflow-hidden bg-background">
       <app-sidebar></app-sidebar>
@@ -18,6 +25,58 @@ import { TopbarComponent } from './topbar.component';
         </main>
       </div>
     </div>
+    @if (welcome(); as announcement) {
+      <div class="premium-overlay z-[90]" (click)="closeWelcome()">
+        <section appFocusTrap role="dialog" aria-modal="true" [attr.aria-label]="announcement.title" class="premium-dialog flex w-full max-w-lg flex-col overflow-hidden" (click)="$event.stopPropagation()">
+          <header class="premium-dialog-header shrink-0 bg-gradient-to-br from-indigo-950/65 via-violet-950/25 to-transparent px-6 py-7">
+            <div class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-sky-400/10 text-sky-300">✦</div>
+            <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-300">Novedades</p>
+            <h2 class="mt-2 text-xl font-semibold text-white">{{ announcement.title }}</h2>
+          </header>
+          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
+            <p class="whitespace-pre-line text-sm leading-relaxed text-zinc-300">{{ announcement.body }}</p>
+            <label class="flex cursor-pointer items-center gap-2 text-xs text-zinc-500"><input type="checkbox" [checked]="rememberWelcome()" (change)="updateRememberWelcome($event)" class="accent-sky-400">No mostrar de nuevo</label>
+          </div>
+          <footer class="shrink-0 border-t border-white/[0.07] bg-zinc-950/70 px-6 py-4"><div class="flex justify-end"><button (click)="closeWelcome()" class="premium-primary-button">Entendido</button></div></footer>
+        </section>
+      </div>
+    }
   `
 })
-export class DashboardComponent {}
+export class DashboardComponent implements OnInit {
+  private announcements = inject(AnnouncementService);
+  private subscriptions = inject(SubscriptionService);
+  private auth = inject(AuthService);
+  readonly welcome = signal<Announcement | null>(null);
+  readonly rememberWelcome = signal(true);
+
+  ngOnInit(): void {
+    forkJoin({
+      profile: this.auth.loadProfile().pipe(catchError(() => of(null))),
+      subscription: this.subscriptions.getMine().pipe(catchError(() => of(null))),
+      announcements: this.announcements.pending().pipe(catchError(() => of([] as Announcement[])))
+    }).subscribe(({ announcements: items }) => {
+      const user = this.auth.currentUser();
+      const userId = user?.id || user?.email || 'unknown';
+      this.welcome.set(items.find(item => localStorage.getItem(`hasSeenWelcome_${userId}`) !== item.key) || null);
+    });
+  }
+
+  closeWelcome(): void {
+    const item = this.welcome();
+    if (!item) return;
+    const user = this.auth.currentUser();
+    const userId = user?.id || user?.email || 'unknown';
+    if (this.rememberWelcome()) {
+      localStorage.setItem(`hasSeenWelcome_${userId}`, item.key);
+      this.announcements.dismiss(item.key).subscribe({ error: () => undefined });
+    } else {
+      localStorage.removeItem(`hasSeenWelcome_${userId}`);
+    }
+    this.welcome.set(null);
+  }
+
+  updateRememberWelcome(event: Event): void {
+    this.rememberWelcome.set((event.target as HTMLInputElement).checked);
+  }
+}

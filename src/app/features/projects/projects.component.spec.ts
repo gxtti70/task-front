@@ -1,20 +1,28 @@
 import { TestBed } from '@angular/core/testing';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../../core/services/auth.service';
 import { ProjectService } from '../../core/services/project.service';
 import { ToastService } from '../../core/services/toast.service';
 import { UserDirectoryService } from '../../core/services/user-directory.service';
+import { SubscriptionService } from '../../core/services/subscription.service';
+import { FeatureGateService } from '../../core/services/feature-gate.service';
+import { Router } from '@angular/router';
 import { ProjectsComponent } from './projects.component';
 
 describe('ProjectsComponent project creation permissions', () => {
-  let projectService: { getProjects: ReturnType<typeof vi.fn>; createProject: ReturnType<typeof vi.fn> };
+  let projectService: { getProjects: ReturnType<typeof vi.fn>; createProject: ReturnType<typeof vi.fn>; loadFavoriteProjects: ReturnType<typeof vi.fn>; setFavorite: ReturnType<typeof vi.fn>; isFavorite: ReturnType<typeof vi.fn>; favoriteProjects: () => never[] };
   let toast: { error: ReturnType<typeof vi.fn>; errorFor: ReturnType<typeof vi.fn>; success: ReturnType<typeof vi.fn> };
   let canManageTasks: boolean;
 
   beforeEach(() => {
     canManageTasks = false;
-    projectService = { getProjects: vi.fn(() => of([])), createProject: vi.fn(() => of({})) };
+    projectService = {
+      getProjects: vi.fn(() => of([])), createProject: vi.fn(() => of({})),
+      loadFavoriteProjects: vi.fn(() => of([])), setFavorite: vi.fn(() => of(undefined)),
+      isFavorite: vi.fn(() => false), favoriteProjects: () => []
+    };
     toast = { error: vi.fn(), errorFor: vi.fn(), success: vi.fn() };
 
     TestBed.configureTestingModule({
@@ -23,7 +31,11 @@ describe('ProjectsComponent project creation permissions', () => {
         { provide: AuthService, useValue: { canManageTasks: () => canManageTasks, isAdmin: () => false, currentUser: () => null } },
         { provide: ProjectService, useValue: projectService },
         { provide: ToastService, useValue: toast },
-        { provide: UserDirectoryService, useValue: {} }
+        { provide: UserDirectoryService, useValue: {} },
+        { provide: SubscriptionService, useValue: { subscription: () => null } },
+        { provide: FeatureGateService, useValue: { canCreateProject: () => true, canAddMember: () => true } },
+        { provide: Router, useValue: { navigateByUrl: vi.fn() } },
+        { provide: ActivatedRoute, useValue: { queryParamMap: of(convertToParamMap({})) } }
       ]
     });
   });

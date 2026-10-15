@@ -29,6 +29,7 @@ export class ToastService {
 
   errorFor(error: unknown, fallback: string): void {
     const value = error as { status?: number; error?: unknown; message?: string } | null;
+    if ((value as { _taskManagerHandled?: boolean } | null)?._taskManagerHandled) return;
     let message = fallback;
 
     if (value?.status === 0) {
@@ -37,6 +38,8 @@ export class ToastService {
       message = 'Tu sesión ya no es válida. Inicia sesión de nuevo.';
     } else if (value?.status === 403) {
       message = 'Tu cuenta no tiene permiso para realizar esta acción.';
+    } else if (value?.status === 402) {
+      message = 'Has alcanzado el límite de tu plan. Elige un plan superior para continuar.';
     } else if (typeof value?.error === 'string' && value.error.trim()) {
       message = value.error;
     } else if (value?.error && typeof value.error === 'object' && 'message' in value.error

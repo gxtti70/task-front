@@ -41,7 +41,7 @@ export class RegisterComponent {
 
     // Mapeo exacto apuntando al DTO 'RegisterRequest' de tu Spring Boot
     const registerPayload = {
-      fullName: this.name,
+      fullName: this.name.trim(),
       email: this.email,
       password: this.password
     };

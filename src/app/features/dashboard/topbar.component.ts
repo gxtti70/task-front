@@ -1,31 +1,49 @@
-import { Component, OnDestroy, OnInit, computed, inject, signal, HostListener } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal, HostListener, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { NotificationItem } from '../../core/models';
 import { NotificationService } from '../../core/services/notification.service';
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
+import { ProfileModalComponent } from '../profile/profile-modal.component';
+import { TaskService } from '../../core/services/task.service';
+import { Task } from '../../core/models';
+import { FocusTrapDirective } from '../../shared/directives/focus-trap.directive';
 
 @Component({
   selector: 'app-topbar',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, LucideAngularModule, ProfileModalComponent, FocusTrapDirective],
   templateUrl: './topbar.component.html'
 })
 export class TopbarComponent implements OnInit, OnDestroy {
+  readonly auth = inject(AuthService);
   private notificationService = inject(NotificationService);
   private toast = inject(ToastService);
-  private router = inject(Router);
+  readonly router = inject(Router);
+  private taskService = inject(TaskService);
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
   private hasLoadedNotifications = false;
 
   isSearchOpen = signal(false);
   isNotificationsOpen = signal(false);
+  isProfileOpen = signal(false);
   isNotificationsLoading = signal(false);
   notifications = signal<NotificationItem[]>([]);
   unreadCount = computed(() => this.notifications().filter(item => !item.read).length);
   hasUnreadNotifications = computed(() => this.unreadCount() > 0);
   hasNotifications = computed(() => this.hasUnreadNotifications());
+  searchQuery = signal('');
+  searchTasks = signal<Task[]>([]);
+  searchLoading = signal(false);
+  activeSearchIndex = signal(0);
+  @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
+  readonly searchResults = computed(() => {
+    const query = this.searchQuery().trim().toLocaleLowerCase();
+    if (!query) return [];
+    return this.searchTasks().filter(task => [task.title, task.description, task.id, ...task.tags].some(value => value?.toLocaleLowerCase().includes(query))).slice(0, 8);
+  });
 
   ngOnInit(): void {
     this.loadNotifications();
@@ -52,7 +70,46 @@ export class TopbarComponent implements OnInit, OnDestroy {
   }
 
   toggleSearch(): void {
-    this.isSearchOpen.update(value => !value);
+    const opening = !this.isSearchOpen();
+    this.isSearchOpen.set(opening);
+    if (opening) {
+      this.searchQuery.set('');
+      this.activeSearchIndex.set(0);
+      this.searchLoading.set(true);
+      this.taskService.getTasks().subscribe({
+        next: tasks => { this.searchTasks.set(tasks); this.searchLoading.set(false); },
+        error: error => { this.searchLoading.set(false); this.toast.errorFor(error, 'No se pudieron buscar las tareas.'); }
+      });
+      setTimeout(() => this.searchInput?.nativeElement.focus());
+    }
+  }
+
+  handleSearchKeydown(event: KeyboardEvent): void {
+    const results = this.searchResults();
+    if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && results.length) {
+      event.preventDefault();
+      const step = event.key === 'ArrowDown' ? 1 : -1;
+      this.activeSearchIndex.update(index => (index + step + results.length) % results.length);
+    } else if (event.key === 'Enter' && results.length) {
+      event.preventDefault();
+      this.openTaskSearchResult(results[this.activeSearchIndex()]);
+    }
+  }
+
+  openTaskSearchResult(task: Task): void {
+    this.isSearchOpen.set(false);
+    void this.router.navigate(['/dashboard/kanban'], { queryParams: { q: task.title } });
+  }
+
+  private safeNotificationUrl(target: string): string | null {
+    if (!target || !target.startsWith('/') || target.startsWith('//') || /[\\\u0000-\u001f]/.test(target)) return null;
+    try {
+      const url = new URL(target, window.location.origin);
+      if (url.origin !== window.location.origin || !/^\/dashboard(?:\/|$)/.test(url.pathname)) return null;
+      return `${url.pathname}${url.search}${url.hash}`;
+    } catch {
+      return null;
+    }
   }
 
   toggleNotifications(): void {
@@ -79,7 +136,9 @@ export class TopbarComponent implements OnInit, OnDestroy {
   openNotification(notification: NotificationItem): void {
     this.markAsRead(notification);
     this.isNotificationsOpen.set(false);
-    this.router.navigateByUrl(notification.targetUrl);
+    const target = this.safeNotificationUrl(notification.targetUrl);
+    if (target) void this.router.navigateByUrl(target);
+    else this.toast.info('Esta notificación contiene un destino no válido.');
   }
 
   formatTime(value: string): string {

@@ -2,14 +2,20 @@
   <button (click)="toggleSearch()"
           class="flex items-center gap-2.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-900/80 border border-zinc-800/80 rounded-lg text-zinc-400 hover:text-zinc-200 transition-all text-xs w-64 text-left">
     <lucide-icon name="search" class="h-3.5 w-3.5 text-zinc-500"></lucide-icon>
-    <span>Buscar comandos o tareas...</span>
+    <span>Buscar tareas...</span>
     <kbd class="ml-auto bg-zinc-950 text-[10px] text-zinc-600 border border-zinc-800 px-1.5 py-0.5 rounded font-mono font-bold">⌘K</kbd>
   </button>
 
-  <div class="flex items-center gap-4 relative">
+  <div class="flex items-center gap-2 relative">
+    <button type="button" (click)="isProfileOpen.set(true)" aria-label="Editar perfil" title="Editar perfil"
+            [style.--profile-accent]="auth.currentUser()?.accentColor || '#818cf8'"
+            class="profile-accent-button rounded-xl border border-transparent p-2 text-zinc-400 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/60">
+      <lucide-icon name="settings" class="h-4 w-4"></lucide-icon>
+    </button>
     <!-- Botón de la Campana -->
     <button (click)="toggleNotifications(); $event.stopPropagation()"
-            class="relative text-zinc-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-zinc-900">
+            [style.--profile-accent]="auth.currentUser()?.accentColor || '#818cf8'"
+            class="profile-accent-button relative rounded-xl border border-transparent p-2 text-zinc-400 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/60">
       <lucide-icon name="bell" class="h-4 w-4"></lucide-icon>
       @if (hasUnreadNotifications()) {
         <span class="absolute top-1.5 right-1.5 h-2 w-2 bg-amber-500 rounded-full ring-2 ring-zinc-950 animate-pulse"></span>
@@ -72,26 +78,33 @@
 
 @if (isSearchOpen()) {
   <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center pt-[15vh] px-4 animate-fade-in" (click)="toggleSearch()">
-    <div class="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden glass-panel" (click)="$event.stopPropagation()">
+    <div appFocusTrap class="premium-dialog w-full max-w-lg overflow-hidden" role="dialog" aria-modal="true" aria-label="Buscar" (click)="$event.stopPropagation()">
       <div class="flex items-center px-4 border-b border-zinc-800">
         <lucide-icon name="search" class="text-zinc-500 h-4 w-4 mr-3"></lucide-icon>
-        <input type="text" placeholder="Escribe un comando para buscar..."
-               class="w-full h-12 bg-transparent text-sm text-white placeholder-zinc-500 focus:outline-none" autofocus>
+        <input #searchInput type="search" [value]="searchQuery()" (input)="searchQuery.set(searchInput.value); activeSearchIndex.set(0)" (keydown)="handleSearchKeydown($event)" placeholder="Busca por título, descripción o etiqueta..."
+               class="w-full h-12 bg-transparent text-sm text-white placeholder-zinc-500 focus:outline-none" autocomplete="off">
         <button (click)="toggleSearch()" class="text-zinc-600 hover:text-zinc-400 text-xs font-mono bg-zinc-950 border border-zinc-800 px-1.5 py-0.5 rounded">ESC</button>
       </div>
       <div class="p-2">
-        <span class="px-3 py-1.5 text-[10px] font-medium text-zinc-500 uppercase tracking-wider block">Atajos recomendados</span>
-        <div class="space-y-0.5">
-          <div class="flex items-center justify-between px-3 py-2 hover:bg-zinc-800 rounded-lg text-xs text-zinc-300 cursor-pointer transition-colors">
-            <span class="font-medium">Ir al Tablero Kanban</span>
-            <span class="text-[10px] text-zinc-500 font-mono">G luego K</span>
-          </div>
-          <div class="flex items-center justify-between px-3 py-2 hover:bg-zinc-800 rounded-lg text-xs text-zinc-300 cursor-pointer transition-colors">
-            <span class="font-medium">Crear Nueva Tarea</span>
-            <span class="text-[10px] text-zinc-500 font-mono">C</span>
-          </div>
+        <div class="max-h-80 overflow-y-auto p-1" role="listbox" aria-label="Resultados de tareas">
+          @if (searchLoading()) {
+            <p class="px-3 py-5 text-center text-xs text-zinc-500">Cargando tareas…</p>
+          } @else if (!searchQuery().trim()) {
+            <button type="button" class="w-full rounded-lg px-3 py-2 text-left text-xs text-zinc-300 hover:bg-zinc-800" (click)="isSearchOpen.set(false); router.navigateByUrl('/dashboard/kanban')">Ir al tablero Kanban</button>
+          } @else if (searchResults().length) {
+            @for (task of searchResults(); track task.id; let index = $index) {
+              <button type="button" role="option" [attr.aria-selected]="index === activeSearchIndex()" (mouseenter)="activeSearchIndex.set(index)" (click)="openTaskSearchResult(task)" class="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-xs text-zinc-200 hover:bg-zinc-800" [ngClass]="index === activeSearchIndex() ? 'bg-zinc-800' : ''">
+                <span class="min-w-0 truncate font-medium">{{ task.title }}</span><span class="shrink-0 font-mono text-[10px] text-zinc-500">{{ task.status }}</span>
+              </button>
+            }
+          } @else {
+            <p class="px-3 py-5 text-center text-xs text-zinc-500">No se encontraron tareas.</p>
+          }
         </div>
       </div>
     </div>
   </div>
+}
+@if (isProfileOpen()) {
+  <app-profile-modal (close)="isProfileOpen.set(false)"></app-profile-modal>
 }

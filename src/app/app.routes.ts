@@ -11,38 +11,62 @@ export const routes: Routes = [
   },
   {
     path: 'auth',
+    data: { title: 'Acceso' },
     canActivate: [guestGuard],
     children: [
       {
         path: 'login',
+        data: { title: 'Iniciar sesión | TaskManager' },
         loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent),
         canActivate: [guestGuard]
       },
       {
         path: 'register',
+        data: { title: 'Crear cuenta | TaskManager' },
         loadComponent: () => import('./features/auth/register.component').then(m => m.RegisterComponent),
+        canActivate: [guestGuard]
+      },
+      {
+        path: 'forgot-password',
+        data: { title: 'Recuperar contraseña | TaskManager' },
+        loadComponent: () => import('./features/auth/forgot-password.component').then(m => m.ForgotPasswordComponent),
+        canActivate: [guestGuard]
+      },
+      {
+        path: 'reset-password',
+        data: { title: 'Nueva contraseña | TaskManager' },
+        loadComponent: () => import('./features/auth/reset-password.component').then(m => m.ResetPasswordComponent),
         canActivate: [guestGuard]
       }
     ]
   },
   {
     path: 'dashboard',
+    data: { title: 'TaskManager' },
     loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
     canActivate: [authGuard],
     children: [
       {
         path: 'kanban',
+        data: { title: 'Tablero | TaskManager' },
         loadComponent: () => import('./features/kanban/kanban.component').then(m => m.KanbanComponent)
       },
       {
         path: 'projects',
+        data: { title: 'Proyectos | TaskManager' },
         loadComponent: () => import('./features/projects/projects.component').then(m => m.ProjectsComponent)
+      },
+      {
+        path: 'subscription',
+        data: { title: 'Planes | TaskManager' },
+        loadComponent: () => import('./features/subscription/pricing.component').then(m => m.PricingComponent)
       },
       {
         path: 'admin',
         children: [
           {
             path: 'users',
+            data: { title: 'Administración | TaskManager' },
             canActivate: [adminGuard],
             loadComponent: () => import('./features/admin/users.component').then(m => m.UsersComponent)
           }
@@ -51,7 +75,28 @@ export const routes: Routes = [
     ]
   },
   {
+    path: 'error/401',
+    loadComponent: () => import('./shared/pages/unauthorized.component').then(m => m.UnauthorizedComponent),
+    data: { title: 'Sesión requerida | TaskManager' }
+  },
+  {
+    path: 'error/403',
+    loadComponent: () => import('./shared/pages/forbidden.component').then(m => m.ForbiddenComponent),
+    data: { title: 'Acceso denegado | TaskManager' }
+  },
+  {
+    path: 'error/500',
+    loadComponent: () => import('./shared/pages/server-error.component').then(m => m.ServerErrorComponent),
+    data: { title: 'Error del servidor | TaskManager' }
+  },
+  {
+    path: 'not-found',
+    loadComponent: () => import('./shared/pages/not-found.component').then(m => m.NotFoundComponent),
+    data: { title: 'Página no encontrada | TaskManager' }
+  },
+  {
     path: '**',
-    redirectTo: 'dashboard/kanban'
+    loadComponent: () => import('./shared/pages/not-found.component').then(m => m.NotFoundComponent),
+    data: { title: 'Página no encontrada | TaskManager' }
   }
 ];

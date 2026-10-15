@@ -35,12 +35,17 @@ yarn-error.log
 /connect.lock
 /coverage
 .env
+.env.*
+!.env.example
 test-results/
 playwright-report/
 /libpeerconnection.log
 testem.log
 /typings
 __screenshots__/
+
+# Local backend workspace and generated output
+/.backend-stage/
 
 # System files
 .DS_Store

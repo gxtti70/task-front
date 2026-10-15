@@ -4,5 +4,5 @@ import { AuthService } from '../services/auth.service';
 
 export const adminGuard: CanActivateFn = () => {
   const router = inject(Router);
-  return inject(AuthService).isAdmin() ? true : router.createUrlTree(['/dashboard/kanban']);
+  return inject(AuthService).isAdmin() ? true : router.createUrlTree(['/error/403']);
 };

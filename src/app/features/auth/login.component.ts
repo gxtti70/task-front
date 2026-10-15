@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LucideAngularModule } from 'lucide-angular';
@@ -15,6 +15,7 @@ import { LucideAngularModule } from 'lucide-angular';
 export class LoginComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private toast = inject(ToastService);
 
   email = '';
@@ -24,7 +25,7 @@ export class LoginComponent implements OnInit {
   ngOnInit(): void {
     //Si ya hay una sesión activa, lo redirigimos directo al Kanban
     if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/dashboard/kanban']);
+      void this.router.navigateByUrl(this.returnTo());
     }
   }
 
@@ -38,12 +39,17 @@ export class LoginComponent implements OnInit {
     this.authService.login({ email: this.email, password: this.password }).subscribe({
       next: () => {
         this.isLoading.set(false);
-        this.router.navigate(['/dashboard/kanban']);
+        void this.router.navigateByUrl(this.returnTo());
       },
       error: (err) => {
         this.toast.errorFor(err, 'No se pudo iniciar sesión. Revisa tus credenciales.');
         this.isLoading.set(false);
       }
     });
+  }
+
+  private returnTo(): string {
+    const requested = this.route.snapshot.queryParamMap.get('returnTo');
+    return requested?.startsWith('/dashboard/') && !requested.startsWith('//') ? requested : '/dashboard/kanban';
   }
 }

@@ -2,12 +2,14 @@ import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { AuthService } from '../services/auth.service';
 import { ToastService } from '../services/toast.service';
-import { catchError, switchMap } from 'rxjs/operators';
-import { throwError } from 'rxjs';
+import { Router } from '@angular/router';
+import { catchError, retry, switchMap } from 'rxjs/operators';
+import { throwError, timer } from 'rxjs';
 
 export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const toast = inject(ToastService);
+  const router = inject(Router);
 
   // Intentamos obtener el token de la Signal o directamente de localStorage
   const token = authService.accessToken() || localStorage.getItem('access_token') || localStorage.getItem('token');
@@ -28,7 +30,20 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   return next(clonedReq).pipe(
+    retry({
+      count: 2,
+      delay: (error: unknown, attempt) => ['GET', 'HEAD', 'OPTIONS'].includes(req.method)
+        && error instanceof HttpErrorResponse && error.status >= 500
+        ? timer(attempt * 300)
+        : throwError(() => error)
+    }),
     catchError((error: HttpErrorResponse) => {
+      if (error.status === 402) {
+        toast.errorFor(error, 'Has alcanzado el límite de tu plan.');
+        (error as HttpErrorResponse & { _taskManagerHandled?: boolean })._taskManagerHandled = true;
+        void router.navigate(['/dashboard/subscription']);
+        return throwError(() => error);
+      }
       // Si el backend devuelve 401 y no era una petición de auth/refresh
       const isLoginOrRegister = req.url.includes('/api/auth/login') || req.url.includes('/api/auth/register');
       const isRefreshRequest = req.url.includes('/api/auth/refresh');

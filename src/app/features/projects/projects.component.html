@@ -5,36 +5,44 @@
       <p class="mt-0.5 text-xs text-zinc-500">Gestión y monitoreo de módulos de software</p>
     </div>
     @if (authService.canManageTasks()) {
-      <button (click)="openCreateModal()" class="flex items-center gap-1.5 rounded-lg bg-white px-3.5 py-2 text-xs font-medium text-black hover:bg-zinc-200">
-        <lucide-icon name="plus" class="h-3.5 w-3.5"></lucide-icon> Nuevo Proyecto
+      <button (click)="openCreateModal()" class="flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-medium hover:bg-zinc-200"
+        [ngClass]="featureGate.canCreateProject() ? 'bg-white text-black' : 'border border-amber-900/70 bg-amber-950/40 text-amber-300'">
+        <lucide-icon [name]="featureGate.canCreateProject() ? 'plus' : 'lock'" class="h-3.5 w-3.5"></lucide-icon> Nuevo Proyecto
       </button>
     }
   </header>
 
   @if (isLoading()) {
-    <p class="text-xs text-zinc-500">Cargando proyectos...</p>
-  } @else if (projects().length === 0) {
-    <div class="rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 px-6 py-10 text-center">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3" aria-label="Cargando proyectos">
+      @for (card of [1, 2, 3, 4, 5, 6]; track card) { <app-skeleton skeletonClass="h-48 w-full"></app-skeleton> }
+    </div>
+  } @else if (visibleProjects().length === 0) {
+    <app-empty-state [title]="favoritesOnly() ? 'Todavía no tienes favoritos' : 'Todavía no hay proyectos'" [description]="favoritesOnly() ? 'Marca con una estrella los proyectos que quieras tener a mano.' : 'Crea un proyecto y elige a las personas que trabajarán en él.'">
       <lucide-icon name="folder-plus" class="mx-auto h-7 w-7 text-zinc-600"></lucide-icon>
-      <h2 class="mt-3 text-sm font-medium text-zinc-200">Todavía no hay proyectos</h2>
-      <p class="mt-1 text-xs text-zinc-500">Crea un proyecto y elige a las personas que trabajarán en él.</p>
       @if (authService.canManageTasks()) {
         <button (click)="openCreateModal()" class="mt-4 rounded-lg bg-white px-3.5 py-2 text-xs font-medium text-black hover:bg-zinc-200">
           Crear primer proyecto
         </button>
       }
-    </div>
+    </app-empty-state>
   } @else {
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-      @for (project of projects(); track project.id) {
+      @for (project of visibleProjects(); track project.id) {
         <article class="flex flex-col justify-between rounded-xl border border-zinc-900 bg-zinc-950/60 p-5 shadow-sm transition hover:border-zinc-700">
           <div>
             <div class="mb-3 flex items-center justify-between gap-2">
               <span class="truncate font-mono text-[10px] font-semibold text-zinc-500">{{ project.id }}</span>
+              <div class="flex items-center gap-2">
+              <button type="button" (click)="toggleFavorite(project)" [attr.aria-label]="projectService.isFavorite(project.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+                [attr.title]="projectService.isFavorite(project.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+                class="rounded p-1 text-amber-300 hover:bg-zinc-800" [ngClass]="projectService.isFavorite(project.id) ? 'opacity-100' : 'opacity-50 hover:opacity-100'">
+                <lucide-icon name="star" class="h-4 w-4" [ngClass]="projectService.isFavorite(project.id) ? 'fill-current' : ''"></lucide-icon>
+              </button>
               <span class="rounded border px-2 py-0.5 text-[10px] font-medium"
                 [ngClass]="project.status === 'ARCHIVED' ? 'border-zinc-800 bg-zinc-900 text-zinc-500' : project.status === 'ACTIVE' ? 'border-emerald-900/50 bg-emerald-950/50 text-emerald-400' : 'border-amber-900/50 bg-amber-950/40 text-amber-400'">
                 {{ project.status }}
               </span>
+              </div>
             </div>
             <h2 class="text-sm font-semibold text-zinc-100">{{ project.name }}</h2>
             <p class="mt-1.5 line-clamp-2 text-xs leading-relaxed text-zinc-500">{{ project.description || 'Sin descripción' }}</p>
@@ -61,14 +69,18 @@
 </section>
 
 @if (isModalOpen()) {
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" (click)="closeModal()">
-    <section class="w-full max-w-xl space-y-4 rounded-xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl" (click)="$event.stopPropagation()">
-      <h2 class="text-base font-semibold text-white">{{ editingProject() ? 'Editar proyecto' : 'Crear proyecto' }}</h2>
+  <div class="premium-overlay" (click)="closeModal()">
+    <section appFocusTrap class="premium-dialog w-full max-w-xl space-y-4 p-6" role="dialog" aria-modal="true" aria-labelledby="project-modal-title" (click)="$event.stopPropagation()">
+      <header class="premium-dialog-header -mx-6 -mt-6 flex items-center justify-between px-6 py-5">
+        <div><p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Workspace</p>
+          <h2 id="project-modal-title" class="mt-1 text-base font-semibold tracking-tight text-white">{{ editingProject() ? 'Editar proyecto' : 'Crear proyecto' }}</h2></div>
+        <button type="button" (click)="closeModal()" aria-label="Cerrar" class="premium-icon-button">×</button>
+      </header>
       <label class="block text-xs text-zinc-400">Nombre
-        <input [(ngModel)]="newProject.name" name="projectName" required maxlength="255" class="mt-1 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white" />
+        <input [(ngModel)]="newProject.name" name="projectName" required maxlength="255" class="premium-control mt-2 w-full text-sm" />
       </label>
       <label class="block text-xs text-zinc-400">Descripción
-        <textarea [(ngModel)]="newProject.description" name="projectDescription" rows="3" maxlength="255" class="mt-1 w-full resize-none rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white"></textarea>
+        <textarea [(ngModel)]="newProject.description" name="projectDescription" rows="3" maxlength="255" class="premium-control mt-2 w-full resize-none text-sm"></textarea>
       </label>
       @if (!editingProject()) {
         <div class="space-y-2">
@@ -77,7 +89,7 @@
             <span class="text-[10px] text-zinc-500">{{ selectedInitialMemberIds().length }} seleccionados</span>
           </div>
           <p class="text-[10px] text-zinc-500">El propietario se agrega automáticamente al proyecto.</p>
-          <div class="max-h-40 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-900/60">
+          <div class="max-h-40 overflow-y-auto rounded-2xl border border-white/[0.08] bg-black/20">
             @if (isLoadingUsers()) {
               <p class="p-3 text-xs text-zinc-500">Cargando usuarios...</p>
             } @else if (availableInitialMembers().length === 0) {
@@ -86,7 +98,7 @@
               @for (user of availableInitialMembers(); track user.id) {
                 <label class="flex cursor-pointer items-center gap-3 border-b border-zinc-800/70 px-3 py-2 last:border-0 hover:bg-zinc-800/50">
                   <input type="checkbox" [checked]="selectedInitialMemberIds().includes(user.id!)"
-                    (change)="toggleInitialMember(user.id!, $any($event.target).checked)"
+                    (change)="toggleInitialMemberFromEvent(user.id!, $event)"
                     class="h-3.5 w-3.5 accent-white" />
                   <span class="min-w-0 flex-1">
                     <span class="block truncate text-xs text-zinc-200">{{ user.name || user.fullName || user.email }}</span>
@@ -100,32 +112,32 @@
         </div>
       }
       <label class="block text-xs text-zinc-400">Estado
-        <select [(ngModel)]="newProject.status" name="projectStatus" class="mt-1 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white">
+        <select [(ngModel)]="newProject.status" name="projectStatus" class="premium-control mt-2 w-full text-sm">
           <option value="ACTIVE">Activo</option><option value="ON_HOLD">En pausa</option><option value="COMPLETED">Completado</option>
           @if (editingProject()?.status === 'ARCHIVED') { <option value="ARCHIVED">Archivado</option> }
         </select>
       </label>
-      <div class="flex justify-end gap-2 border-t border-zinc-900 pt-3">
-        <button (click)="closeModal()" class="rounded-lg px-3.5 py-2 text-xs text-zinc-400 hover:bg-zinc-900 hover:text-white">Cancelar</button>
-        <button (click)="saveProject()" [disabled]="isSaving() || !newProject.name.trim()" class="rounded-lg bg-white px-3.5 py-2 text-xs font-medium text-black disabled:opacity-50">{{ isSaving() ? 'Guardando...' : editingProject() ? 'Guardar cambios' : 'Crear proyecto' }}</button>
+      <div class="flex justify-end gap-2 border-t border-white/[0.07] pt-4">
+        <button type="button" (click)="closeModal()" class="premium-secondary-button">Cancelar</button>
+        <button type="button" (click)="saveProject()" [disabled]="isSaving() || !newProject.name.trim()" class="premium-primary-button">{{ isSaving() ? 'Guardando...' : editingProject() ? 'Guardar cambios' : 'Crear proyecto' }}</button>
       </div>
     </section>
   </div>
 }
 
 @if (selectedProject(); as project) {
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" (click)="closeMembers()">
-    <section class="w-full max-w-lg space-y-4 rounded-xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl" (click)="$event.stopPropagation()">
+  <div class="premium-overlay" (click)="closeMembers()">
+    <section appFocusTrap class="premium-dialog w-full max-w-lg space-y-4 p-6" role="dialog" aria-modal="true" aria-labelledby="project-members-title" (click)="$event.stopPropagation()">
       <header class="flex items-start justify-between">
-        <div><h2 class="text-base font-semibold text-white">Miembros</h2><p class="mt-1 text-xs text-zinc-500">{{ project.name }}</p></div>
+        <div><h2 id="project-members-title" class="text-base font-semibold text-white">Miembros</h2><p class="mt-1 text-xs text-zinc-500">{{ project.name }}</p></div>
         <button (click)="closeMembers()" class="text-zinc-500 hover:text-white" aria-label="Cerrar">×</button>
       </header>
       <div class="flex gap-2">
-        <select [(ngModel)]="selectedUserId" name="memberUserId" class="min-w-0 flex-1 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-white">
+        <select [(ngModel)]="selectedUserId" name="memberUserId" class="premium-control min-w-0 flex-1 text-xs">
           <option value="">Selecciona una persona</option>
           @for (user of availableUsers(); track user.id) { <option [value]="user.id">{{ user.name || user.email }}</option> }
         </select>
-        <button (click)="addMember()" [disabled]="!selectedUserId" class="rounded-lg bg-white px-3 py-2 text-xs font-medium text-black disabled:opacity-40">Agregar</button>
+        <button (click)="addMember()" [disabled]="!selectedUserId || !featureGate.canAddMember(members().length)" class="rounded-lg bg-white px-3 py-2 text-xs font-medium text-black disabled:opacity-40">Agregar</button>
       </div>
       @if (isLoadingMembers()) {
         <p class="py-5 text-center text-xs text-zinc-500">Cargando miembros...</p>
@@ -143,7 +155,7 @@
           }
         </div>
       }
-      <div class="flex justify-end"><button (click)="closeMembers()" class="rounded-lg border border-zinc-800 px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-900">Cerrar</button></div>
+      <div class="flex justify-end"><button (click)="closeMembers()" class="premium-secondary-button">Cerrar</button></div>
     </section>
   </div>
 }

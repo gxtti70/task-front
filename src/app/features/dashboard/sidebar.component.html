@@ -8,7 +8,7 @@
         <lucide-icon name="layers" class="text-black h-4 w-4"></lucide-icon>
       </div>
       @if (!isCollapsed()) {
-        <span class="font-medium tracking-tight text-white text-sm whitespace-nowrap animate-fade-in">Acme Jira</span>
+        <span class="font-medium tracking-tight text-white text-sm whitespace-nowrap animate-fade-in">TaskManager</span>
       }
     </div>
   </div>
@@ -51,7 +51,23 @@
           <span class="animate-fade-in text-xs">Todos los proyectos</span>
         }
       </a>
+      @if (!isCollapsed()) {
+        <span class="px-3 pt-3 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider block">Favoritos</span>
+      }
+      @for (project of projectService.favoriteProjects(); track project.id) {
+        <a routerLink="/dashboard/projects" [queryParams]="{ favoritesOnly: true }" routerLinkActive="bg-zinc-900 text-white"
+           class="flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-zinc-200 rounded-lg text-sm" [title]="project.name">
+          <lucide-icon name="star" class="h-4 w-4 text-amber-300"></lucide-icon>
+          @if (!isCollapsed()) { <span class="animate-fade-in truncate text-xs">{{ project.name }}</span> }
+        </a>
+      } @empty {
+        @if (!isCollapsed()) { <p class="px-3 py-1 text-[10px] text-zinc-600">Aún no hay favoritos</p> }
+      }
     </div>
+    <a routerLink="/dashboard/subscription" routerLinkActive="bg-zinc-900 text-white" class="flex items-center gap-3 rounded-lg px-3 py-2 text-zinc-400 hover:text-zinc-200 text-sm">
+      <lucide-icon name="credit-card" class="h-4 w-4"></lucide-icon>
+      @if (!isCollapsed()) { <span class="text-xs">Planes y pagos</span> }
+    </a>
   </div>
 
   <!-- Botón colapsar -->
@@ -63,9 +79,11 @@
   <!-- Perfil de Usuario y Logout -->
   <div class="p-3 border-t border-zinc-800 flex items-center justify-between">
     <div class="flex items-center gap-2.5 overflow-hidden">
-      <img [src]="avatarUrl()"
-           class="h-7 w-7 rounded-full bg-zinc-800 object-cover border border-zinc-700 shrink-0"
-           [alt]="displayName()">
+      @if (avatarUrl()) {
+        <img [src]="avatarUrl()!" class="h-7 w-7 rounded-full bg-zinc-800 object-cover border border-zinc-700 shrink-0" [alt]="displayName()">
+      } @else {
+        <span class="flex h-7 w-7 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-[10px] font-semibold text-zinc-200" aria-hidden="true">{{ avatarInitials() }}</span>
+      }
       @if (!isCollapsed()) {
         <div class="flex flex-col overflow-hidden animate-fade-in">
           <span class="text-xs font-medium text-zinc-200 truncate">{{ displayName() }}</span>
@@ -77,6 +95,9 @@
                 [ngClass]="roleBadgeClasses(userRole()) + ' border'">
             {{ userRole() }}
           </span>
+          <a routerLink="/dashboard/subscription" class="mt-1 inline-flex w-fit items-center gap-1 rounded border border-sky-900/70 bg-sky-950/50 px-1.5 py-0.5 text-[9px] font-bold uppercase text-sky-300 hover:bg-sky-900/60">
+            <lucide-icon name="credit-card" class="h-3 w-3"></lucide-icon>{{ subscriptionService.subscription()?.tier || 'FREE' }}
+          </a>
         </div>
       }
     </div>
