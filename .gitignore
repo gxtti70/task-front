@@ -6,6 +6,7 @@
 /out-tsc
 /bazel-out
 /src/environments/stripe-build-config.generated.ts
+/src/environments/api-build-config.generated.ts
 
 # Node
 /node_modules
