@@ -1,8 +1,8 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, throwError } from 'rxjs';
-import { tap, catchError, finalize, shareReplay, map } from 'rxjs/operators';
+import { EMPTY, Observable, of, throwError } from 'rxjs';
+import { tap, catchError, finalize, shareReplay, map, switchMap } from 'rxjs/operators';
 import { AuthResponse, ProfileUpdateRequest, User } from '../models';
 import { environment } from '../../../environments/environment';
 
@@ -13,45 +13,24 @@ export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
   private readonly API_URL = `${environment.apiUrl}/auth`;
-  private refreshInFlight: Observable<{ accessToken: string }> | null = null;
+  private refreshInFlight: Observable<void> | null = null;
+  private csrfInFlight: Observable<string> | null = null;
+  private csrfValue: string | null = null;
 
   // State Management nativo con Signals
-  private _accessToken = signal<string | null>(
-    localStorage.getItem('access_token') || localStorage.getItem('token')
-  );
-  private _currentUser = signal<User | null>(this.getSafeInitialUser());
+  private _currentUser = signal<User | null>(null);
+
+  constructor() {
+    // Remove credentials persisted by versions that used localStorage.
+    for (const key of ['access_token', 'token', 'refresh_token', 'user']) localStorage.removeItem(key);
+  }
 
   // Selectores Reactivos Públicos
-  public accessToken = computed(() => this._accessToken());
   public currentUser = computed(() => this._currentUser());
-  public isAuthenticated = computed(() => !!this._accessToken());
+  public isAuthenticated = computed(() => !!this._currentUser());
 
-  // Selectores de Roles y Permisos leyendo directamente el token JWT para máxima seguridad
-  public userRole = computed(() => {
-    const token = this._accessToken();
-    const savedRole = this._currentUser()?.role;
-    if (!token) return savedRole?.replace(/^ROLE_/i, '').toUpperCase() || '';
-
-    try {
-      const payloadBase64 = token.split('.')[1];
-      if (!payloadBase64) throw new Error('El token no contiene un payload JWT.');
-      const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
-      const paddedBase64 = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
-      const decodedPayload = JSON.parse(atob(paddedBase64));
-
-      const claim = decodedPayload.role ?? decodedPayload.roles ?? decodedPayload.authorities;
-      const role = Array.isArray(claim) ? claim[0] : claim;
-      if (typeof role === 'string' && role.trim()) {
-        return role.trim().replace(/^ROLE_/i, '').toUpperCase();
-      }
-
-      return 'DEVELOPER';
-    } catch (e) {
-      console.error('Error al decodificar el rol del token:', e);
-      // Si hay token, no confiar en un rol persistido que podría pertenecer a una sesión anterior.
-      return 'DEVELOPER';
-    }
-  });
+  // Role comes only from the authenticated /me response.
+  public userRole = computed(() => this._currentUser()?.role?.replace(/^ROLE_/i, '').toUpperCase() || '');
 
   public isAdmin = computed(() => this.userRole() === 'ADMIN');
 
@@ -60,30 +39,9 @@ export class AuthService {
     return role === 'ADMIN' || role === 'SCRUM' || role === 'MANAGER';
   });
 
-  // 🔒 Función para parsear el localStorage de forma segura y normalizar el nombre
-  private getSafeInitialUser(): User | null {
-    const savedUser = localStorage.getItem('user');
-    if (!savedUser || savedUser === 'null') return null;
-
-    try {
-      if (savedUser.startsWith('{') || savedUser.startsWith('[')) {
-        const user = JSON.parse(savedUser);
-        return {
-          ...user,
-          name: user.name || user.fullName || 'Usuario'
-        };
-      }
-      return null;
-    } catch (e) {
-      console.error('⚠️ Estructura JSON de usuario corrupta en localStorage. Limpiando...', e);
-      localStorage.removeItem('user');
-      return null;
-    }
-  }
-
   login(credentials: { email: string; password: string }): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.API_URL}/login`, credentials).pipe(
-      tap(res => this.setSession(res)),
+    return this.http.post<AuthResponse>(`${this.API_URL}/login`, credentials, { withCredentials: true }).pipe(
+      switchMap(res => this.loadProfile().pipe(map(() => res))),
       catchError(err => {
         return throwError(() => err);
       })
@@ -91,13 +49,13 @@ export class AuthService {
   }
 
   loadProfile(): Observable<User> {
-    return this.http.get<User>(`${this.API_URL}/me`).pipe(
+    return this.http.get<User>(`${this.API_URL}/me`, { withCredentials: true }).pipe(
       tap(profile => this.setCurrentProfile(profile))
     );
   }
 
   updateProfile(profile: ProfileUpdateRequest): Observable<User> {
-    return this.http.patch<User>(`${this.API_URL}/me`, profile).pipe(
+    return this.http.patch<User>(`${this.API_URL}/me`, profile, { withCredentials: true }).pipe(
       tap(profile => this.setCurrentProfile(profile))
     );
   }
@@ -110,10 +68,17 @@ export class AuthService {
       avatarUrl: profile.avatarData || undefined
     } as User;
     this._currentUser.set(user);
-    localStorage.setItem('user', JSON.stringify(user));
   }
 
-  register(payload: { fullName: string; email: string; password: string }): Observable<string> {
+  register(payload: {
+    fullName: string;
+    email: string;
+    password: string;
+    acceptTerms: boolean;
+    acceptPrivacy: boolean;
+    termsVersion: string;
+    privacyVersion: string;
+  }): Observable<string> {
     return this.http.post(`${this.API_URL}/register`, payload, { responseType: 'text' }).pipe(
       catchError(err => {
         return throwError(() => err);
@@ -131,21 +96,32 @@ export class AuthService {
   resetPassword(token: string, password: string): Observable<string> {
     return this.http.post<{ message: string }>(`${this.API_URL}/reset-password`, { token, password }).pipe(
       map(res => res.message),
+      tap(() => this.clearSession()),
       catchError(err => throwError(() => err))
     );
   }
 
-  refreshToken(): Observable<{ accessToken: string }> {
+  ensureCsrf(): Observable<string> {
+    if (this.csrfValue) return new Observable(subscriber => { subscriber.next(this.csrfValue!); subscriber.complete(); });
+    if (!this.csrfInFlight) {
+      this.csrfInFlight = this.http.get(`${this.API_URL}/csrf`, { responseType: 'text', withCredentials: true }).pipe(
+        tap(value => this.csrfValue = value),
+        finalize(() => this.csrfInFlight = null),
+        shareReplay({ bufferSize: 1, refCount: false })
+      );
+    }
+    return this.csrfInFlight;
+  }
+
+  refreshToken(): Observable<void> {
     if (this.refreshInFlight) return this.refreshInFlight;
-    const refresh = localStorage.getItem('refresh_token');
-    this.refreshInFlight = this.http.post<{ accessToken: string }>(`${this.API_URL}/refresh`, { refreshToken: refresh }).pipe(
-      tap(res => {
-        this._accessToken.set(res.accessToken);
-        localStorage.setItem('access_token', res.accessToken);
-        localStorage.setItem('token', res.accessToken);
-      }),
+    this.refreshInFlight = this.ensureCsrf().pipe(
+      switchMap(csrf => this.http.post<void>(`${this.API_URL}/refresh`, {}, {
+        withCredentials: true, headers: { 'X-XSRF-TOKEN': csrf }
+      })),
+      map(() => undefined),
       catchError(err => {
-        this.logout();
+        this.clearSession();
         return throwError(() => err);
       }),
       finalize(() => { this.refreshInFlight = null; }),
@@ -155,36 +131,25 @@ export class AuthService {
   }
 
   logout(): void {
-    this._accessToken.set(null);
-    this._currentUser.set(null);
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
+    void this.ensureCsrf().pipe(
+      switchMap(csrf => this.http.post(`${this.API_URL}/logout`, {}, {
+        withCredentials: true, headers: { 'X-XSRF-TOKEN': csrf }
+      })),
+      catchError(() => EMPTY)
+    ).subscribe({ complete: () => this.clearSession() });
+    this.clearSession();
     this.router.navigate(['/auth/login']);
   }
 
-  private setSession(authRes: AuthResponse): void {
-    const token = authRes.accessToken;
-    this._accessToken.set(token);
+  restoreSession(): Observable<boolean> {
+    return this.loadProfile().pipe(map(() => true), catchError(() => {
+      this.clearSession();
+      return of(false);
+    }));
+  }
 
-    // Normalizamos el usuario recibido del backend para que 'name' nunca esté vacío
-    const rawUser: User = authRes.user || { id: authRes.userId, email: authRes.email, role: authRes.role };
-    const normalizedUser: User = {
-      ...rawUser,
-      email: rawUser.email || authRes.email,
-      role: rawUser.role || authRes.role,
-      fullName: rawUser.fullName || authRes.fullName,
-      name: rawUser.fullName || rawUser.name || authRes.fullName || authRes.email?.split('@')[0] || 'Usuario'
-    };
-
-    this._currentUser.set(normalizedUser);
-
-    localStorage.setItem('access_token', token);
-    localStorage.setItem('token', token);
-    if (authRes.refreshToken) {
-      localStorage.setItem('refresh_token', authRes.refreshToken);
-    }
-    localStorage.setItem('user', JSON.stringify(normalizedUser));
+  private clearSession(): void {
+    this._currentUser.set(null);
+    this.csrfValue = null;
   }
 }

@@ -17,26 +17,22 @@ export const routes: Routes = [
       {
         path: 'login',
         data: { title: 'Iniciar sesión | TaskManager' },
-        loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent),
-        canActivate: [guestGuard]
+        loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent)
       },
       {
         path: 'register',
         data: { title: 'Crear cuenta | TaskManager' },
-        loadComponent: () => import('./features/auth/register.component').then(m => m.RegisterComponent),
-        canActivate: [guestGuard]
+        loadComponent: () => import('./features/auth/register.component').then(m => m.RegisterComponent)
       },
       {
         path: 'forgot-password',
         data: { title: 'Recuperar contraseña | TaskManager' },
-        loadComponent: () => import('./features/auth/forgot-password.component').then(m => m.ForgotPasswordComponent),
-        canActivate: [guestGuard]
+        loadComponent: () => import('./features/auth/forgot-password.component').then(m => m.ForgotPasswordComponent)
       },
       {
         path: 'reset-password',
         data: { title: 'Nueva contraseña | TaskManager' },
-        loadComponent: () => import('./features/auth/reset-password.component').then(m => m.ResetPasswordComponent),
-        canActivate: [guestGuard]
+        loadComponent: () => import('./features/auth/reset-password.component').then(m => m.ResetPasswordComponent)
       }
     ]
   },
@@ -72,6 +68,27 @@ export const routes: Routes = [
           }
         ]
       }
+    ]
+  },
+  {
+    path: 'legal',
+    children: [
+      {
+        path: 'terminos',
+        data: { title: 'Términos y Condiciones | TaskManager', doc: 'terms' },
+        loadComponent: () => import('./features/legal/legal.component').then(m => m.LegalComponent)
+      },
+      {
+        path: 'privacidad',
+        data: { title: 'Política de Tratamiento de Datos | TaskManager', doc: 'privacy' },
+        loadComponent: () => import('./features/legal/legal.component').then(m => m.LegalComponent)
+      },
+      {
+        path: 'cookies',
+        data: { title: 'Política de Cookies | TaskManager', doc: 'cookies' },
+        loadComponent: () => import('./features/legal/legal.component').then(m => m.LegalComponent)
+      },
+      { path: '', pathMatch: 'full', redirectTo: 'terminos' }
     ]
   },
   {

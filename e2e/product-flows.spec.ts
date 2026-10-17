@@ -7,26 +7,33 @@ const task = {
 };
 
 async function mockApplication(page: Page, role: 'MANAGER' | 'ADMIN', blockProjectCreation = false, authenticated = true): Promise<void> {
-  const tokenPayload = btoa(JSON.stringify({ role: `ROLE_${role}` }));
-  await page.addInitScript(({ token, user, authenticated: isAuthenticated }) => {
-    if (!isAuthenticated) return;
-    localStorage.setItem('access_token', token);
-    localStorage.setItem('user', JSON.stringify(user));
-  }, {
-    token: `header.${tokenPayload}.signature`,
-    user: { id: 'user-1', fullName: 'Test User', name: 'Test User', role, email: `${role.toLowerCase()}@example.test` },
-    authenticated
-  });
+  let sessionAuthenticated = authenticated;
   await page.route('**/api/**', async route => {
     const request = route.request();
     const pathname = new URL(request.url()).pathname;
     let status = 200;
     let body: unknown = [];
 
+    if (pathname.endsWith('/auth/csrf') && request.method() === 'GET') {
+      await route.fulfill({ status: 200, contentType: 'text/plain', body: 'e2e-csrf-token' });
+      return;
+    }
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method())
+        && !request.headers()['x-xsrf-token']) {
+      await route.fulfill({ status: 403, json: { code: 'CSRF_INVALID' } });
+      return;
+    }
+
     if (pathname.endsWith('/auth/login') && request.method() === 'POST') {
-      body = { accessToken: `header.${btoa(JSON.stringify({ role: 'ROLE_MANAGER' }))}.signature`, refreshToken: 'test-refresh', userId: 'user-1', email: 'manager@example.test', role: 'MANAGER' };
+      sessionAuthenticated = true;
+      body = { userId: 'user-1', email: `${role.toLowerCase()}@example.test`, role };
     } else if (pathname.endsWith('/auth/me')) {
-      body = { id: 'user-1', fullName: 'Test User', name: 'Test User', role, email: `${role.toLowerCase()}@example.test` };
+      if (!sessionAuthenticated) {
+        status = 401;
+        body = { message: 'Unauthorized' };
+      } else {
+        body = { id: 'user-1', fullName: 'Test User', name: 'Test User', role, email: `${role.toLowerCase()}@example.test` };
+      }
     } else if (pathname.endsWith('/subscriptions/me')) {
       body = { tier: 'FREE', status: 'ACTIVE', cancelAtPeriodEnd: false, usage: { projects: 0, maxProjects: 3, membersPerProject: 1, maxMembersPerProject: 5 }, features: [], capabilities: { attachments: false } };
     } else if (pathname.endsWith('/tasks') && request.method() === 'GET') {

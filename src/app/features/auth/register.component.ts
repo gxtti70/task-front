@@ -1,29 +1,42 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { LegalService, LegalVersions } from '../../core/services/legal.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  // Asegúrate de que FormsModule esté exactamente aquí listado
   imports: [CommonModule, FormsModule, RouterLink, LucideAngularModule],
   templateUrl: './register.component.html'
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
   private authService = inject(AuthService);
+  private legalService = inject(LegalService);
   private router = inject(Router);
   private toast = inject(ToastService);
 
-  // Estas variables se mapean directo con el [(ngModel)] de tu HTML
   name = '';
   email = '';
   password = '';
 
+  // Autorización previa, expresa e informada (Ley 1581 de 2012, art. 9).
+  acceptTerms = false;
+  acceptPrivacy = false;
+
+  private legalVersions: LegalVersions | null = null;
+
   isLoading = signal(false);
+
+  ngOnInit(): void {
+    this.legalService.getVersions().subscribe({
+      next: versions => (this.legalVersions = versions),
+      error: () => (this.legalVersions = null)
+    });
+  }
 
   onSubmit(): void {
     // Validación preventiva en el cliente
@@ -37,13 +50,26 @@ export class RegisterComponent {
       return;
     }
 
+    if (!this.acceptTerms || !this.acceptPrivacy) {
+      this.toast.error('Debes aceptar los Términos y Condiciones y la Política de Tratamiento de Datos Personales.', 'Aceptación requerida');
+      return;
+    }
+
+    if (!this.legalVersions) {
+      this.toast.error('No pudimos cargar los documentos legales. Recarga la página e inténtalo de nuevo.', 'Documentos no disponibles');
+      return;
+    }
+
     this.isLoading.set(true);
 
-    // Mapeo exacto apuntando al DTO 'RegisterRequest' de tu Spring Boot
     const registerPayload = {
       fullName: this.name.trim(),
       email: this.email,
-      password: this.password
+      password: this.password,
+      acceptTerms: true,
+      acceptPrivacy: true,
+      termsVersion: this.legalVersions.termsVersion,
+      privacyVersion: this.legalVersions.privacyVersion
     };
     this.authService.register(registerPayload).subscribe({
       next: () => {

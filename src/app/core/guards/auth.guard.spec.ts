@@ -1,19 +1,23 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, Router, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { describe, expect, it, vi } from 'vitest';
+import { provideRouter, Router, ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree } from '@angular/router';
+import { firstValueFrom, isObservable, Observable, of } from 'rxjs';
+import { describe, expect, it } from 'vitest';
 import { AuthService } from '../services/auth.service';
 import { authGuard } from './auth.guard';
 
 describe('authGuard', () => {
-  it('allows an authenticated user', () => {
-    TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: AuthService, useValue: { isAuthenticated: () => true } }] });
-    expect(TestBed.runInInjectionContext(() => authGuard({} as ActivatedRouteSnapshot, { url: '/dashboard/projects' } as RouterStateSnapshot))).toBe(true);
+  it('restores the cookie session and allows an authenticated user', async () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: AuthService, useValue: { restoreSession: () => of(true) } }] });
+    const output = TestBed.runInInjectionContext(() => authGuard({} as ActivatedRouteSnapshot, { url: '/dashboard/projects' } as RouterStateSnapshot));
+    const result = isObservable(output) ? await firstValueFrom(output as Observable<boolean | UrlTree>) : output;
+    expect(result).toBe(true);
   });
 
-  it('preserves the requested route as returnTo for anonymous users', () => {
-    TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: AuthService, useValue: { isAuthenticated: () => false } }] });
-    const result = TestBed.runInInjectionContext(() => authGuard({} as ActivatedRouteSnapshot, { url: '/dashboard/projects?favoritesOnly=true' } as RouterStateSnapshot));
+  it('preserves the requested route as returnTo for anonymous users', async () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: AuthService, useValue: { restoreSession: () => of(false) } }] });
+    const output = TestBed.runInInjectionContext(() => authGuard({} as ActivatedRouteSnapshot, { url: '/dashboard/projects?favoritesOnly=true' } as RouterStateSnapshot));
+    const resolved = isObservable(output) ? await firstValueFrom(output as Observable<boolean | UrlTree>) : output;
     const router = TestBed.inject(Router);
-    expect(router.serializeUrl(result as ReturnType<Router['createUrlTree']>)).toContain('returnTo=%2Fdashboard%2Fprojects%3FfavoritesOnly%3Dtrue');
+    expect(router.serializeUrl(resolved as UrlTree)).toContain('returnTo=%2Fdashboard%2Fprojects%3FfavoritesOnly%3Dtrue');
   });
 });

@@ -1,12 +1,16 @@
 import { expect, test } from '@playwright/test';
 
 test('signed-in user sees and dismisses the welcome announcement', async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('access_token', 'e2e-access-token');
-    localStorage.setItem('user', JSON.stringify({ id: 'welcome-e2e-user', email: 'welcome@example.test', role: 'MANAGER' }));
-  });
   await page.route('**/api/**', route => {
     const url = new URL(route.request().url());
+    if (url.pathname === '/api/auth/csrf') return route.fulfill({ status: 200, contentType: 'text/plain', body: 'e2e-csrf-token' });
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(route.request().method())
+        && !route.request().headers()['x-xsrf-token']) {
+      return route.fulfill({ status: 403, json: { code: 'CSRF_INVALID' } });
+    }
+    if (url.pathname === '/api/auth/me') return route.fulfill({ json: {
+      id: 'welcome-e2e-user', email: 'welcome@example.test', fullName: 'Welcome User', role: 'MANAGER'
+    } });
     if (url.pathname === '/api/subscriptions/me') return route.fulfill({ json: {
       tier: 'FREE', status: 'ACTIVE', cancelAtPeriodEnd: false,
       usage: { projects: 0, maxProjects: 3, membersPerProject: 1, maxMembersPerProject: 5 }, features: []

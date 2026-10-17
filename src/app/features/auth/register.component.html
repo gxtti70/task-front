@@ -29,6 +29,25 @@
           class="premium-control w-full text-sm" required>
       </div>
 
+      <div class="space-y-2 pt-1">
+        <label class="flex items-start gap-2 text-xs text-zinc-400 cursor-pointer">
+          <input type="checkbox" name="acceptTerms" [(ngModel)]="acceptTerms" required
+            class="mt-0.5 h-3.5 w-3.5 rounded border-zinc-600 bg-zinc-800 accent-white">
+          <span>Acepto los
+            <a routerLink="/legal/terminos" target="_blank" rel="noopener"
+              class="text-zinc-200 underline underline-offset-4 hover:text-white">Términos y Condiciones</a>.
+          </span>
+        </label>
+        <label class="flex items-start gap-2 text-xs text-zinc-400 cursor-pointer">
+          <input type="checkbox" name="acceptPrivacy" [(ngModel)]="acceptPrivacy" required
+            class="mt-0.5 h-3.5 w-3.5 rounded border-zinc-600 bg-zinc-800 accent-white">
+          <span>He leído y acepto la
+            <a routerLink="/legal/privacidad" target="_blank" rel="noopener"
+              class="text-zinc-200 underline underline-offset-4 hover:text-white">Política de Tratamiento de Datos Personales</a>.
+          </span>
+        </label>
+      </div>
+
       <button type="submit" [disabled]="isLoading()"
         class="premium-primary-button mt-6 w-full text-sm disabled:cursor-not-allowed">
         @if (isLoading()) {

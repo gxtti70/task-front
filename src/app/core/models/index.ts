@@ -24,8 +24,8 @@ export interface ProfileUpdateRequest {
 }
 
 export interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
+  accessToken?: string | null;
+  refreshToken?: string | null;
   tokenType?: string;
   email: string;
   role: string;

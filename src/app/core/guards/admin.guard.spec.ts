@@ -14,6 +14,6 @@ describe('adminGuard', () => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: AuthService, useValue: { isAdmin: () => false } }] });
     const destination = TestBed.runInInjectionContext(() => adminGuard(route, state));
-    expect(TestBed.inject(Router).serializeUrl(destination as ReturnType<Router['createUrlTree']>)).toBe('/dashboard/kanban');
+    expect(TestBed.inject(Router).serializeUrl(destination as ReturnType<Router['createUrlTree']>)).toBe('/error/403');
   });
 });

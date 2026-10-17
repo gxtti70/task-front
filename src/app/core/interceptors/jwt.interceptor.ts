@@ -6,71 +6,59 @@ import { Router } from '@angular/router';
 import { catchError, retry, switchMap } from 'rxjs/operators';
 import { throwError, timer } from 'rxjs';
 
+const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
+
 export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const toast = inject(ToastService);
   const router = inject(Router);
+  const isCsrfBootstrap = req.url.includes('/api/auth/csrf');
+  const isRefreshRequest = req.url.includes('/api/auth/refresh');
+  const isProfileRequest = req.url.includes('/api/auth/me');
+  const isAuthOperation = req.url.includes('/api/auth/') && !req.url.includes('/api/auth/me');
+  const withCookies = req.clone({ withCredentials: true });
 
-  // Intentamos obtener el token de la Signal o directamente de localStorage
-  const token = authService.accessToken() || localStorage.getItem('access_token') || localStorage.getItem('token');
-
-  // Solo omitimos la cabecera en los endpoints explícitos de login/registro
-  const isAuthEndpoint = req.url.includes('/api/auth/login') || req.url.includes('/api/auth/register');
-
-  let clonedReq = req;
-  if (token && !isAuthEndpoint) {
-    // Limpieza agresiva: elimina espacios invisibles, comillas, retornos de carro y saltos de línea
-    const cleanToken = String(token).trim().replace(/[\s"'\r\n]+/g, '');
-
-    clonedReq = req.clone({
-      setHeaders: {
-        Authorization: 'Bearer ' + cleanToken
-      }
-    });
-  }
-
-  return next(clonedReq).pipe(
-    retry({
-      count: 2,
-      delay: (error: unknown, attempt) => ['GET', 'HEAD', 'OPTIONS'].includes(req.method)
-        && error instanceof HttpErrorResponse && error.status >= 500
-        ? timer(attempt * 300)
-        : throwError(() => error)
-    }),
-    catchError((error: HttpErrorResponse) => {
-      if (error.status === 402) {
-        toast.errorFor(error, 'Has alcanzado el límite de tu plan.');
-        (error as HttpErrorResponse & { _taskManagerHandled?: boolean })._taskManagerHandled = true;
-        void router.navigate(['/dashboard/subscription']);
-        return throwError(() => error);
-      }
-      // Si el backend devuelve 401 y no era una petición de auth/refresh
-      const isLoginOrRegister = req.url.includes('/api/auth/login') || req.url.includes('/api/auth/register');
-      const isRefreshRequest = req.url.includes('/api/auth/refresh');
-      if (error.status === 401 && !isLoginOrRegister && !isRefreshRequest) {
-        return authService.refreshToken().pipe(
-          switchMap((res) => {
-            const newToken = res.accessToken;
-
-            // Limpieza también para el nuevo token por seguridad
-            const cleanNewToken = String(newToken).trim().replace(/[\s"'\r\n]+/g, '');
-
-            const reClonedReq = req.clone({
-              setHeaders: {
-                Authorization: 'Bearer ' + cleanNewToken
+  const send = (csrfToken?: string) => {
+    const prepared = csrfToken
+      ? withCookies.clone({ setHeaders: { 'X-XSRF-TOKEN': csrfToken } })
+      : withCookies;
+    return next(prepared).pipe(
+      retry({
+        count: 2,
+        delay: (error: unknown, attempt) => SAFE_METHODS.includes(req.method)
+          && error instanceof HttpErrorResponse && error.status >= 500
+          ? timer(attempt * 300)
+          : throwError(() => error)
+      }),
+      catchError((error: HttpErrorResponse) => {
+        if (error.status === 402) {
+          toast.errorFor(error, 'Has alcanzado el límite de tu plan.');
+          (error as HttpErrorResponse & { _taskManagerHandled?: boolean })._taskManagerHandled = true;
+          void router.navigate(['/dashboard/subscription']);
+          return throwError(() => error);
+        }
+        if (error.status === 401 && !isAuthOperation && !isCsrfBootstrap && !isRefreshRequest) {
+          return authService.ensureCsrf().pipe(
+            switchMap(csrf => authService.refreshToken().pipe(
+              switchMap(() => next(withCookies.clone({ setHeaders: { 'X-XSRF-TOKEN': csrf } })))
+            )),
+            catchError(refreshError => {
+              // refreshToken() already clears local auth state. Calling logout() here
+              // starts another guarded navigation, whose /me request fails the same way
+              // and can create an endless navigation/refresh loop.
+              if (!isProfileRequest) {
+                toast.errorFor(refreshError, 'Tu sesión expiró. Inicia sesión de nuevo.');
+                void router.navigate(['/auth/login']);
               }
-            });
-            return next(reClonedReq);
-          }),
-          catchError((refreshError) => {
-            // Si el refresh también falla, cerramos sesión limpiamente
-            authService.logout();
-            toast.errorFor(refreshError, 'Tu sesión expiró. Inicia sesión de nuevo.');
-            return throwError(() => refreshError);
-          })
-        );
-      }
-      return throwError(() => error);
-    })
-  );
+              return throwError(() => refreshError);
+            })
+          );
+        }
+        return throwError(() => error);
+      })
+    );
+  };
+
+  if (isCsrfBootstrap || SAFE_METHODS.includes(req.method)) return send();
+  return authService.ensureCsrf().pipe(switchMap(token => send(token)));
 };

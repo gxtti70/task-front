@@ -64,7 +64,7 @@ type PaymentMethod = 'card' | 'apple_pay' | 'google_pay';
         <section class="mx-auto w-full max-w-2xl space-y-4 rounded-2xl border border-sky-400/20 bg-zinc-950/70 p-5">
           <div class="flex items-center justify-between gap-4"><div><h2 class="text-sm font-semibold text-white">Pago de {{ tierLabel(tier) }}</h2><p class="mt-1 text-xs text-zinc-500">{{ methodLabel(selectedMethod()) }} · pago seguro con Stripe</p></div><button type="button" (click)="closePayment()" aria-label="Cerrar pago" class="text-zinc-500 hover:text-white">✕</button></div>
           @if (!environment.stripePublishableKey) {
-            <p class="text-xs leading-relaxed text-amber-200/80">Falta configurar VITE_STRIPE_PUBLISHABLE_KEY en el entorno de compilación y copiarla a environment.ts. Puedes continuar con la página de Checkout como alternativa.</p>
+            <p class="text-xs leading-relaxed text-amber-200/80">Falta configurar STRIPE_PUBLISHABLE_KEY antes de iniciar o compilar el frontend. Puedes continuar con la página de Checkout como alternativa.</p>
             <button type="button" (click)="choose(tier)" [disabled]="busy()" class="premium-primary-button">Continuar con Checkout</button>
           } @else {
             <div id="stripe-payment-element" class="min-h-24 rounded-xl bg-white p-3"></div>

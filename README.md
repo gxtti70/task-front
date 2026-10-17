@@ -99,6 +99,9 @@ Variables recomendadas:
 
 - `DB_PASSWORD`
 - `JWT_SECRET`
+- `STRIPE_PUBLISHABLE_KEY` (opcional para Stripe.js; solo clave pública `pk_test_...` o `pk_live_...`)
+
+Los comandos `npm start`, `npm run build` y `npm test` generan temporalmente la configuración Angular a partir de `STRIPE_PUBLISHABLE_KEY` y la eliminan al terminar. Para Compose, define esa variable en `.env` antes de construir el frontend. Nunca uses aquí `STRIPE_SECRET_KEY` ni `STRIPE_WEBHOOK_SECRET`.
 
 No compartas estos valores ni los subas a repositorios públicos.
 

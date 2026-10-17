@@ -1,0 +1,54 @@
+<main class="min-h-screen bg-background text-zinc-200">
+  <div class="mx-auto max-w-3xl px-4 py-12">
+    <header class="mb-10 border-b border-zinc-800 pb-6">
+      <a routerLink="/" class="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-zinc-500 hover:text-zinc-300 transition-colors">
+        TaskManager
+      </a>
+      <h1 class="mt-4 text-3xl font-semibold tracking-tight text-white">{{ doc.title }}</h1>
+      <p class="mt-2 text-sm text-zinc-400">{{ doc.summary }}</p>
+      <p class="mt-3 text-xs text-zinc-500">
+        Versión {{ version }}
+        @if (versions) { · En vigencia desde {{ versions.effectiveDate }} }
+      </p>
+    </header>
+
+    <article class="space-y-8">
+      @for (section of doc.sections; track section.heading) {
+        <section>
+          <h2 class="text-lg font-medium text-white">{{ section.heading }}</h2>
+          @for (paragraph of section.paragraphs; track paragraph) {
+            <p class="mt-2 text-sm leading-relaxed text-zinc-400">{{ paragraph }}</p>
+          }
+          @if (section.list?.length) {
+            <ul class="mt-3 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-zinc-400">
+              @for (item of section.list; track item) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+          }
+        </section>
+      }
+
+      @if (doc.id === 'privacy' && versions) {
+        <section class="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
+          <h2 class="text-sm font-medium text-white">Datos del responsable</h2>
+          <dl class="mt-2 space-y-1 text-sm text-zinc-400">
+            <div><dt class="inline text-zinc-500">Responsable: </dt><dd class="inline">{{ versions.controllerName }}</dd></div>
+            <div><dt class="inline text-zinc-500">NIT: </dt><dd class="inline">{{ versions.controllerTaxId }}</dd></div>
+            <div><dt class="inline text-zinc-500">Domicilio: </dt><dd class="inline">{{ versions.controllerAddress }}</dd></div>
+            <div><dt class="inline text-zinc-500">Canal de privacidad: </dt><dd class="inline">{{ versions.privacyEmail }}</dd></div>
+          </dl>
+        </section>
+      }
+    </article>
+
+    <footer class="mt-12 border-t border-zinc-800 pt-6">
+      <nav class="flex flex-wrap gap-x-6 gap-y-2 text-xs text-zinc-500">
+        <a routerLink="/legal/terminos" class="hover:text-zinc-300 transition-colors">Términos y Condiciones</a>
+        <a routerLink="/legal/privacidad" class="hover:text-zinc-300 transition-colors">Política de Tratamiento de Datos</a>
+        <a routerLink="/legal/cookies" class="hover:text-zinc-300 transition-colors">Política de Cookies</a>
+        <a routerLink="/auth/login" class="hover:text-zinc-300 transition-colors">Volver al inicio de sesión</a>
+      </nav>
+    </footer>
+  </div>
+</main>
