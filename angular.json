@@ -18,7 +18,7 @@
           "options": {
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
-            "outputPath": "dist/task-front/browser",
+            "outputPath": "dist/task-front",
             "assets": [
               {
                 "glob": "**/*",

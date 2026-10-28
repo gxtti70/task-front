@@ -1,14 +1,9 @@
 {
-  "version": 2,
-  "builds": [
-    { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "dist/task-front/browser" } }
-  ],
-  "routes": [
-    { "src": "/api(.*)", "headers": { "Access-Control-Allow-Credentials": "true" }, "continue": true },
-    { "src": "/(.*)", "dest": "/index.html" }
-  ],
-  "env": {
-    "API_URL": "@api_url",
-    "STRIPE_PUBLISHABLE_KEY": "@stripe_publishable_key"
-  }
+  "buildCommand": "npm run build",
+  "installCommand": "npm ci",
+  "outputDirectory": "dist/task-front/browser",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://task-back-vosa.onrender.com/api/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
