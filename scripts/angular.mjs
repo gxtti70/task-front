@@ -8,7 +8,7 @@ const generatedStripeConfig = path.join(projectRoot, 'src/environments/stripe-bu
 const generatedApiConfig = path.join(projectRoot, 'src/environments/api-build-config.generated.ts');
 const generatedBillingConfig = path.join(projectRoot, 'src/environments/billing-build-config.generated.ts');
 const publishableKey = process.env.STRIPE_PUBLISHABLE_KEY?.trim() ?? '';
-const apiUrl = process.env.API_URL?.trim() ?? '/api';
+const apiUrl = (process.env.API_URL?.trim() || '/api').replace(/\/+$/, '') || '/api';
 const rawBillingSimulate = process.env.BILLING_SIMULATE?.trim() ?? 'false';
 
 if (publishableKey && !/^pk_(test|live)_[A-Za-z0-9]+$/.test(publishableKey)) {

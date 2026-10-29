@@ -100,10 +100,20 @@ Variables recomendadas:
 - `DB_PASSWORD`
 - `JWT_SECRET`
 - `STRIPE_PUBLISHABLE_KEY` (opcional para Stripe.js; solo clave pública `pk_test_...` o `pk_live_...`)
+- `BILLING_SIMULATE` (opcional; solo `true`, `false` o vacío)
+- `API_URL` (opcional; ruta base de la API, por defecto `/api`)
 
-Los comandos `npm start`, `npm run build` y `npm test` generan temporalmente la configuración Angular a partir de `STRIPE_PUBLISHABLE_KEY` y la eliminan al terminar. Para Compose, define esa variable en `.env` antes de construir el frontend. Nunca uses aquí `STRIPE_SECRET_KEY` ni `STRIPE_WEBHOOK_SECRET`.
+Los comandos `npm start`, `npm run build` y `npm test` generan temporalmente la configuración Angular a partir de `STRIPE_PUBLISHABLE_KEY`, `API_URL` y `BILLING_SIMULATE`, y la eliminan al terminar. Para Compose, define esas variables en `.env` antes de construir el frontend. Nunca uses aquí `STRIPE_SECRET_KEY` ni `STRIPE_WEBHOOK_SECRET`.
 
 No compartas estos valores ni los subas a repositorios públicos.
+
+### Despliegue en Vercel
+
+`vercel.json` publica `dist/task-front/browser` y reescribe `/api/:path*` hacia el backend en Render. En Vercel **no definas `API_URL`** (o déjala vacía): el front usa `/api`, el rewrite enruta al backend y las cookies HttpOnly de autenticación se mantienen en el mismo origen.
+
+Si defines `API_URL` con la URL completa del backend (por ejemplo `https://task-back-vosa.onrender.com/api`), las peticiones pasan a ser cross-site y las cookies `SameSite=Lax` no se envían, por lo que el login falla aunque las credenciales sean correctas.
+
+`BILLING_SIMULATE` solo admite `true`, `false` o vacío; cualquier otro valor detiene el build con un mensaje explícito.
 
 ## Scripts disponibles
 
