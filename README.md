@@ -47,8 +47,8 @@ Task Manager es una solución de gestión de proyectos y tareas orientada a equi
 
 Antes de iniciar el proyecto asegúrate de tener instalado:
 
-- Node.js 22+
-- npm 11+
+- Node.js 22+ (versiones soportadas en `engines.node`)
+- npm 10.9+ (el proyecto fija `npm@10.9.2` en `packageManager`)
 - Docker
 - Docker Compose
 
@@ -114,6 +114,14 @@ No compartas estos valores ni los subas a repositorios públicos.
 Si defines `API_URL` con la URL completa del backend (por ejemplo `https://task-back-vosa.onrender.com/api`), las peticiones pasan a ser cross-site y las cookies `SameSite=Lax` no se envían, por lo que el login falla aunque las credenciales sean correctas.
 
 `BILLING_SIMULATE` solo admite `true`, `false` o vacío; cualquier otro valor detiene el build con un mensaje explícito.
+
+El proyecto fija `npm@10.9.2` en `packageManager` porque Vercel compila con Node 22 y npm 10. Al añadir o actualizar dependencias usa ese mismo npm:
+
+```bash
+npx -y npm@10.9.2 install
+```
+
+Un `package-lock.json` regenerado con npm 11 puede ser rechazado por `npm ci` en Vercel con errores del tipo `Missing: <paquete> from lock file`.
 
 ## Scripts disponibles
 
