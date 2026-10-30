@@ -19,6 +19,7 @@ export class AuthService {
 
   // State Management nativo con Signals
   private _currentUser = signal<User | null>(null);
+  readonly isLoggingOut = signal(false);
 
   constructor() {
     // Remove credentials persisted by versions that used localStorage.
@@ -143,14 +144,19 @@ export class AuthService {
   }
 
   logout(): void {
+    if (this.isLoggingOut()) return;
+    this.isLoggingOut.set(true);
     void this.ensureCsrf().pipe(
       switchMap(csrf => this.http.post(`${this.API_URL}/logout`, {}, {
         withCredentials: true, headers: { 'X-XSRF-TOKEN': csrf }
       })),
-      catchError(() => EMPTY)
-    ).subscribe({ complete: () => this.clearSession() });
-    this.clearSession();
-    this.router.navigate(['/auth/login']);
+      catchError(() => EMPTY),
+      finalize(() => {
+        this.clearSession();
+        this.isLoggingOut.set(false);
+        void this.router.navigate(['/auth/login']);
+      })
+    ).subscribe();
   }
 
   restoreSession(): Observable<boolean> {

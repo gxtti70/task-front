@@ -28,6 +28,14 @@ import { catchError } from 'rxjs/operators';
         </main>
       </div>
     </div>
+    @if (auth.isLoggingOut()) {
+      <div class="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/95 backdrop-blur-sm" role="status" aria-live="polite" aria-label="Cerrando sesión">
+        <div class="flex flex-col items-center gap-4 text-center">
+          <span class="h-10 w-10 animate-spin rounded-full border-2 border-zinc-700 border-t-sky-400" aria-hidden="true"></span>
+          <p class="text-sm font-medium text-zinc-200">Cerrando sesión…</p>
+        </div>
+      </div>
+    }
     @if (welcome(); as announcement) {
       <div class="premium-overlay z-[90]" (click)="closeWelcome()">
         <section appFocusTrap role="dialog" aria-modal="true" [attr.aria-label]="announcement.title" class="premium-dialog flex w-full max-w-lg flex-col overflow-hidden" (click)="$event.stopPropagation()">
