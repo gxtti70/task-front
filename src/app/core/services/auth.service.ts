@@ -15,7 +15,6 @@ export class AuthService {
   private readonly API_URL = `${environment.apiUrl}/auth`;
   private refreshInFlight: Observable<void> | null = null;
   private csrfInFlight: Observable<string> | null = null;
-  private csrfValue: string | null = null;
 
   // State Management nativo con Signals
   private _currentUser = signal<User | null>(null);
@@ -115,15 +114,26 @@ export class AuthService {
   }
 
   ensureCsrf(): Observable<string> {
-    if (this.csrfValue) return new Observable(subscriber => { subscriber.next(this.csrfValue!); subscriber.complete(); });
+    // The backend uses double-submit CSRF: the header must match the current
+    // XSRF-TOKEN cookie. A cached response body can become stale if the cookie
+    // is rotated by another request, so always prefer the browser's live cookie.
+    const cookieToken = this.readCsrfCookie();
+    if (cookieToken) return of(cookieToken);
     if (!this.csrfInFlight) {
       this.csrfInFlight = this.http.get(`${this.API_URL}/csrf`, { responseType: 'text', withCredentials: true }).pipe(
-        tap(value => this.csrfValue = value),
+        map(value => this.readCsrfCookie() || value),
         finalize(() => this.csrfInFlight = null),
         shareReplay({ bufferSize: 1, refCount: false })
       );
     }
     return this.csrfInFlight;
+  }
+
+  private readCsrfCookie(): string | null {
+    const cookie = document.cookie.split('; ').find(value => value.startsWith('XSRF-TOKEN='));
+    if (!cookie) return null;
+    try { return decodeURIComponent(cookie.slice('XSRF-TOKEN='.length)); }
+    catch { return cookie.slice('XSRF-TOKEN='.length); }
   }
 
   refreshToken(): Observable<void> {
@@ -168,6 +178,5 @@ export class AuthService {
 
   private clearSession(): void {
     this._currentUser.set(null);
-    this.csrfValue = null;
   }
 }
