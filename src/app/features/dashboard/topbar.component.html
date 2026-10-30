@@ -1,21 +1,27 @@
-<header class="h-14 border-b border-zinc-800 bg-zinc-950/80 px-6 flex items-center justify-between z-40 relative">
-  <button (click)="toggleSearch()"
-          class="flex items-center gap-2.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-900/80 border border-zinc-800/80 rounded-lg text-zinc-400 hover:text-zinc-200 transition-all text-xs w-64 text-left">
-    <lucide-icon name="search" class="h-3.5 w-3.5 text-zinc-500"></lucide-icon>
-    <span>Buscar tareas...</span>
-    <kbd class="ml-auto bg-zinc-950 text-[10px] text-zinc-600 border border-zinc-800 px-1.5 py-0.5 rounded font-mono font-bold">⌘K</kbd>
-  </button>
+<header class="h-14 shrink-0 border-b border-zinc-800 bg-zinc-950/80 px-3 sm:px-4 md:px-6 flex items-center justify-between gap-2 z-40 relative">
+  <div class="flex min-w-0 flex-1 items-center gap-2 md:flex-none">
+    <button type="button" (click)="menuToggle.emit()" aria-label="Abrir menú" title="Abrir menú"
+            class="md:hidden inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-white">
+      <lucide-icon name="menu" class="h-5 w-5"></lucide-icon>
+    </button>
+    <button (click)="toggleSearch()" aria-label="Buscar tareas"
+            class="flex h-10 w-10 shrink-0 items-center justify-center gap-2.5 rounded-lg border border-zinc-800/80 bg-zinc-900 px-0 text-left text-xs text-zinc-400 transition-all hover:bg-zinc-900/80 hover:text-zinc-200 md:h-9 md:w-64 md:justify-start md:px-3">
+      <lucide-icon name="search" class="h-3.5 w-3.5 shrink-0 text-zinc-500"></lucide-icon>
+      <span class="hidden md:inline">Buscar tareas...</span>
+      <kbd class="ml-auto hidden bg-zinc-950 text-[10px] text-zinc-600 border border-zinc-800 px-1.5 py-0.5 rounded font-mono font-bold md:inline-block">⌘K</kbd>
+    </button>
+  </div>
 
-  <div class="flex items-center gap-2 relative">
+  <div class="flex items-center gap-1 sm:gap-2 relative">
     <button type="button" (click)="isProfileOpen.set(true)" aria-label="Editar perfil" title="Editar perfil"
             [style.--profile-accent]="auth.currentUser()?.accentColor || '#818cf8'"
-            class="profile-accent-button rounded-xl border border-transparent p-2 text-zinc-400 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/60">
+            class="profile-accent-button flex h-10 w-10 items-center justify-center rounded-xl border border-transparent p-2 text-zinc-400 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/60 md:h-9 md:w-9">
       <lucide-icon name="settings" class="h-4 w-4"></lucide-icon>
     </button>
     <!-- Botón de la Campana -->
-    <button (click)="toggleNotifications(); $event.stopPropagation()"
+    <button (click)="toggleNotifications(); $event.stopPropagation()" aria-label="Notificaciones"
             [style.--profile-accent]="auth.currentUser()?.accentColor || '#818cf8'"
-            class="profile-accent-button relative rounded-xl border border-transparent p-2 text-zinc-400 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/60">
+            class="profile-accent-button relative flex h-10 w-10 items-center justify-center rounded-xl border border-transparent p-2 text-zinc-400 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/60 md:h-9 md:w-9">
       <lucide-icon name="bell" class="h-4 w-4"></lucide-icon>
       @if (hasUnreadNotifications()) {
         <span class="absolute top-1.5 right-1.5 h-2 w-2 bg-amber-500 rounded-full ring-2 ring-zinc-950 animate-pulse"></span>
@@ -24,7 +30,7 @@
 
     <!-- Menú Desplegable de Notificaciones -->
     @if (isNotificationsOpen()) {
-      <div class="absolute right-0 top-12 w-80 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden z-50 animate-fade-in" (click)="$event.stopPropagation()">
+      <div class="absolute right-0 top-12 w-[min(20rem,calc(100vw-1.5rem))] bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden z-50 animate-fade-in" (click)="$event.stopPropagation()">
         <!-- Header del Dropdown -->
         <div class="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-950/40">
           <div class="flex items-center gap-2">

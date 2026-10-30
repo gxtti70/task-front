@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, computed, inject, signal, HostListener, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, input, output, signal, HostListener, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
@@ -29,6 +29,8 @@ export class TopbarComponent implements OnInit, OnDestroy {
   isSearchOpen = signal(false);
   isNotificationsOpen = signal(false);
   isProfileOpen = signal(false);
+  /** Emitted when the mobile hamburger is pressed; the shell owns the drawer state. */
+  readonly menuToggle = output<void>();
   isNotificationsLoading = signal(false);
   notifications = signal<NotificationItem[]>([]);
   unreadCount = computed(() => this.notifications().filter(item => !item.read).length);

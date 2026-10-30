@@ -5,6 +5,9 @@
 html {
   scrollbar-width: thin;
   scrollbar-color: #52525b #18181b;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overflow-x: hidden;
 }
 
 *::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -20,6 +23,18 @@ body {
   background-color: #09090b;
   color: #fafafa;
   font-family: ui-sans-serif, system-ui, sans-serif;
+  overflow-x: hidden;
+  min-height: 100dvh;
+}
+
+/* En iOS, un input con font-size < 16px provoca zoom automático al enfocarlo.
+   En móvil forzamos 16px para evitar ese salto de layout. */
+@media (max-width: 640px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 @layer components {

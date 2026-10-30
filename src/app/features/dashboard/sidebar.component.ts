@@ -1,4 +1,4 @@
-import { Component, signal, inject, computed, OnInit } from '@angular/core';
+import { Component, HostListener, computed, inject, input, output, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
@@ -21,11 +21,18 @@ export class SidebarComponent implements OnInit {
   private toast = inject(ToastService);
   isCollapsed = signal(false);
 
+  /** Drawer state on small screens, controlled by the dashboard shell. */
+  mobileOpen = input(false);
+  closed = output<void>();
+
   public currentUser = computed(() => this.authService.currentUser());
   public userRole = computed(() => this.authService.userRole());
   public isAdmin = computed(() => this.authService.isAdmin());
   public canManageTasks = computed(() => this.authService.canManageTasks());
   public roleBadgeClasses = roleBadgeClasses;
+
+  /** Labels are always visible on the mobile drawer, even if the desktop rail is collapsed. */
+  public showLabels = computed(() => !this.isCollapsed() || this.mobileOpen());
 
   ngOnInit(): void {
     this.projectService.loadFavoriteProjects().subscribe({
@@ -51,5 +58,14 @@ export class SidebarComponent implements OnInit {
 
   toggleSidebar() {
     this.isCollapsed.update(v => !v);
+  }
+
+  closeMobile(): void {
+    if (this.mobileOpen()) this.closed.emit();
+  }
+
+  @HostListener('window:keydown.escape')
+  onEscape(): void {
+    this.closeMobile();
   }
 }

@@ -44,7 +44,7 @@ type PaymentMethod = 'card' | 'apple_pay' | 'google_pay';
               @if (plan.tier !== 'FREE') {
                 <div class="mb-3 space-y-2">
                   <p class="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Método de pago</p>
-                  <div class="grid grid-cols-3 gap-1.5">
+                  <div class="grid grid-cols-1 gap-1.5 sm:grid-cols-3">
                     <button type="button" (click)="startPayment(plan.tier, 'card')" [disabled]="busy()" class="rounded-lg border px-2 py-2 text-[10px] font-medium" [ngClass]="selectedTier() === plan.tier && selectedMethod() === 'card' ? 'border-sky-400/60 bg-sky-400/10 text-white' : 'border-zinc-800 text-zinc-400 hover:bg-zinc-900'">▰ Tarjeta</button>
                     <button type="button" (click)="startPayment(plan.tier, 'apple_pay')" [disabled]="busy()" class="rounded-lg border px-2 py-2 text-[10px] font-medium" [ngClass]="selectedTier() === plan.tier && selectedMethod() === 'apple_pay' ? 'border-sky-400/60 bg-sky-400/10 text-white' : 'border-zinc-800 text-zinc-400 hover:bg-zinc-900'">● Apple Pay</button>
                     <button type="button" (click)="startPayment(plan.tier, 'google_pay')" [disabled]="busy()" class="rounded-lg border px-2 py-2 text-[10px] font-medium" [ngClass]="selectedTier() === plan.tier && selectedMethod() === 'google_pay' ? 'border-sky-400/60 bg-sky-400/10 text-white' : 'border-zinc-800 text-zinc-400 hover:bg-zinc-900'">◆ Google Pay</button>

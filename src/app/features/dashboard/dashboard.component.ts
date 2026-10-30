@@ -16,11 +16,14 @@ import { catchError } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, RouterOutlet, SidebarComponent, TopbarComponent, FocusTrapDirective],
   template: `
-    <div class="flex h-screen w-screen overflow-hidden bg-background">
-      <app-sidebar></app-sidebar>
+    <div class="flex h-dvh w-full overflow-hidden bg-background">
+      @if (mobileNavOpen()) {
+        <div class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden" (click)="mobileNavOpen.set(false)" aria-hidden="true"></div>
+      }
+      <app-sidebar [mobileOpen]="mobileNavOpen()" (closed)="mobileNavOpen.set(false)"></app-sidebar>
       <div class="flex-1 flex flex-col min-w-0">
-        <app-topbar></app-topbar>
-        <main class="flex-1 overflow-y-auto bg-background p-6">
+        <app-topbar (menuToggle)="mobileNavOpen.update(v => !v)"></app-topbar>
+        <main class="min-w-0 flex-1 overflow-y-auto overflow-x-hidden bg-background p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:p-6">
           <router-outlet></router-outlet>
         </main>
       </div>
@@ -49,6 +52,7 @@ export class DashboardComponent implements OnInit {
   private auth = inject(AuthService);
   readonly welcome = signal<Announcement | null>(null);
   readonly rememberWelcome = signal(true);
+  readonly mobileNavOpen = signal(false);
 
   ngOnInit(): void {
     forkJoin({

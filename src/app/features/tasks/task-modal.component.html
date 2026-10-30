@@ -1,6 +1,6 @@
 <div class="premium-overlay" (click)="onDismiss()">
   <div appFocusTrap class="premium-dialog flex w-full max-w-xl flex-col overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="task-modal-title" (click)="$event.stopPropagation()">
-    <div class="premium-dialog-header flex items-center justify-between px-6 py-5">
+    <div class="premium-dialog-header flex items-center justify-between gap-2 px-4 py-4 sm:px-6 sm:py-5">
       <h2 class="text-sm font-semibold tracking-tight text-white flex items-center gap-2">
         <lucide-icon name="sliders" class="h-4 w-4 text-indigo-300"></lucide-icon>
         <span id="task-modal-title">
@@ -13,7 +13,7 @@
     </div>
 
     <form (ngSubmit)="onSubmit()" class="flex min-h-0 flex-1 flex-col">
-      <div class="min-h-0 flex-1 space-y-4 overflow-y-auto p-6">
+      <div class="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
       <div>
         <label class="block text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Título del Item</label>
         <input type="text" name="title" [(ngModel)]="title" maxlength="255" placeholder="p.ej., Implementar interceptor de refresco JWT"
@@ -26,7 +26,7 @@
                   class="premium-control w-full resize-none text-sm"></textarea>
       </div>
 
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label class="block text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Prioridad de Negocio</label>
           <select name="priority" [(ngModel)]="priority"
@@ -57,7 +57,7 @@
                class="premium-control w-full text-sm">
       </div>
 
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label class="block text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Story Points (Fibonacci)</label>
           <input type="number" name="storyPoints" [(ngModel)]="storyPoints" min="0" max="21"
@@ -71,7 +71,7 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label class="block text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Proyecto</label>
           <select name="projectId" [(ngModel)]="projectId"
@@ -95,13 +95,13 @@
       </div>
 
       </div>
-      <div class="flex shrink-0 items-center justify-end gap-3 border-t border-white/[0.07] bg-zinc-950/70 px-6 py-4">
+      <div class="flex shrink-0 flex-col-reverse gap-2 border-t border-white/[0.07] bg-zinc-950/70 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:px-6 sm:py-4 sm:pb-4">
         <button type="button" (click)="onDismiss()"
-                class="premium-secondary-button">
+                class="premium-secondary-button w-full sm:w-auto">
           Cancelar
         </button>
         <button type="submit"
-                class="premium-primary-button">
+                class="premium-primary-button w-full sm:w-auto">
           {{ task ? 'Guardar cambios' : 'Crear Item' }}
         </button>
       </div>

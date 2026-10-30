@@ -1,11 +1,11 @@
 <section class="flex h-full flex-col space-y-6">
-  <header class="flex items-center justify-between gap-4">
+  <header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
     <div>
       <h1 class="text-xl font-semibold tracking-tight text-white">Proyectos</h1>
       <p class="mt-0.5 text-xs text-zinc-500">Gestión y monitoreo de módulos de software</p>
     </div>
     @if (authService.canManageTasks()) {
-      <button (click)="openCreateModal()" class="flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-medium hover:bg-zinc-200"
+      <button (click)="openCreateModal()" class="flex w-full items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-medium hover:bg-zinc-200 sm:w-auto sm:shrink-0"
         [ngClass]="featureGate.canCreateProject() ? 'bg-white text-black' : 'border border-amber-900/70 bg-amber-950/40 text-amber-300'">
         <lucide-icon [name]="featureGate.canCreateProject() ? 'plus' : 'lock'" class="h-3.5 w-3.5"></lucide-icon> Nuevo Proyecto
       </button>
@@ -70,8 +70,8 @@
 
 @if (isModalOpen()) {
   <div class="premium-overlay" (click)="closeModal()">
-    <section appFocusTrap class="premium-dialog w-full max-w-xl space-y-4 p-6" role="dialog" aria-modal="true" aria-labelledby="project-modal-title" (click)="$event.stopPropagation()">
-      <header class="premium-dialog-header -mx-6 -mt-6 flex items-center justify-between px-6 py-5">
+    <section appFocusTrap class="premium-dialog w-full max-w-xl space-y-4 p-5 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="project-modal-title" (click)="$event.stopPropagation()">
+      <header class="premium-dialog-header -mx-5 -mt-5 flex items-center justify-between px-5 py-4 sm:-mx-6 sm:-mt-6 sm:px-6 sm:py-5">
         <div><p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Workspace</p>
           <h2 id="project-modal-title" class="mt-1 text-base font-semibold tracking-tight text-white">{{ editingProject() ? 'Editar proyecto' : 'Crear proyecto' }}</h2></div>
         <button type="button" (click)="closeModal()" aria-label="Cerrar" class="premium-icon-button">×</button>
@@ -117,9 +117,9 @@
           @if (editingProject()?.status === 'ARCHIVED') { <option value="ARCHIVED">Archivado</option> }
         </select>
       </label>
-      <div class="flex justify-end gap-2 border-t border-white/[0.07] pt-4">
-        <button type="button" (click)="closeModal()" class="premium-secondary-button">Cancelar</button>
-        <button type="button" (click)="saveProject()" [disabled]="isSaving() || !newProject.name.trim()" class="premium-primary-button">{{ isSaving() ? 'Guardando...' : editingProject() ? 'Guardar cambios' : 'Crear proyecto' }}</button>
+      <div class="flex flex-col-reverse gap-2 border-t border-white/[0.07] pt-4 sm:flex-row sm:justify-end">
+        <button type="button" (click)="closeModal()" class="premium-secondary-button w-full sm:w-auto">Cancelar</button>
+        <button type="button" (click)="saveProject()" [disabled]="isSaving() || !newProject.name.trim()" class="premium-primary-button w-full sm:w-auto">{{ isSaving() ? 'Guardando...' : editingProject() ? 'Guardar cambios' : 'Crear proyecto' }}</button>
       </div>
     </section>
   </div>
@@ -127,7 +127,7 @@
 
 @if (selectedProject(); as project) {
   <div class="premium-overlay" (click)="closeMembers()">
-    <section appFocusTrap class="premium-dialog w-full max-w-lg space-y-4 p-6" role="dialog" aria-modal="true" aria-labelledby="project-members-title" (click)="$event.stopPropagation()">
+    <section appFocusTrap class="premium-dialog w-full max-w-lg space-y-4 p-5 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="project-members-title" (click)="$event.stopPropagation()">
       <header class="flex items-start justify-between">
         <div><h2 id="project-members-title" class="text-base font-semibold text-white">Miembros</h2><p class="mt-1 text-xs text-zinc-500">{{ project.name }}</p></div>
         <button (click)="closeMembers()" class="text-zinc-500 hover:text-white" aria-label="Cerrar">×</button>

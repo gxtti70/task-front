@@ -35,22 +35,24 @@
     } @else {
       <div class="divide-y divide-zinc-800">
         @for (user of users(); track user.id) {
-          <div class="flex items-center justify-between gap-4 bg-zinc-950 px-4 py-3">
+          <div class="flex flex-col gap-3 bg-zinc-950 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm text-white">{{ user.fullName }}</p>
               <p class="truncate text-xs text-zinc-500">{{ user.email }} · {{ user.active ? 'Activo' : 'Desactivado' }}</p>
             </div>
+            <div class="flex items-center gap-2 sm:shrink-0">
             <select [ngModel]="user.role" (ngModelChange)="updateUser(user, { role: $event })" [name]="'role-' + user.id"
-              [disabled]="updatingUserId() === user.id" class="premium-control min-h-8 py-1 text-[10px] uppercase disabled:opacity-50"
+              [disabled]="updatingUserId() === user.id" class="premium-control min-h-8 min-w-0 flex-1 py-1 text-[10px] uppercase disabled:opacity-50 sm:flex-none"
               [ngClass]="roleBadgeClasses(user.role)">
               <option value="DEVELOPER">Developer</option><option value="SCRUM">Scrum</option>
               <option value="MANAGER">Manager</option><option value="ADMIN">Admin</option>
             </select>
             <button (click)="updateUser(user, { active: !user.active })" [disabled]="updatingUserId() === user.id"
-              class="rounded border px-2 py-1 text-[10px] disabled:opacity-40"
+              class="shrink-0 rounded border px-2 py-1 text-[10px] disabled:opacity-40"
               [ngClass]="user.active ? 'border-red-950 text-red-400 hover:bg-red-950/40' : 'border-emerald-950 text-emerald-400 hover:bg-emerald-950/40'">
               {{ user.active ? 'Desactivar' : 'Reactivar' }}
             </button>
+            </div>
           </div>
         }
       </div>

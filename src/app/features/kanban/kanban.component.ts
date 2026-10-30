@@ -46,8 +46,18 @@ export class KanbanComponent implements OnInit {
   priorityFilter = signal<TaskPriority | 'ALL'>('ALL');
   assigneeFilter = signal<string>('ALL');
   projectFilter = signal<string>('ALL');
+  filtersOpen = signal(false);
   projects = signal<Project[]>([]);
   tasks = signal<Task[]>([]);
+
+  activeFilterCount = computed(() => {
+    let count = 0;
+    if (this.searchQuery().trim()) count++;
+    if (this.priorityFilter() !== 'ALL') count++;
+    if (this.assigneeFilter() !== 'ALL') count++;
+    if (this.projectFilter() !== 'ALL') count++;
+    return count;
+  });
 
   statusOptions: { value: TaskStatus; label: string }[] = [
     { value: 'TODO', label: 'Por hacer' },

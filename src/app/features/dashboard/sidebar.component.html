@@ -1,24 +1,28 @@
-<div class="h-screen bg-zinc-950 border-r border-zinc-800 flex flex-col transition-all duration-200 relative"
-     [ngClass]="isCollapsed() ? 'w-16' : 'w-64'">
+<div class="fixed inset-y-0 left-0 z-50 flex h-dvh w-72 max-w-[85vw] flex-col border-r border-zinc-800 bg-zinc-950 transition-transform duration-200 md:relative md:z-auto md:h-screen md:translate-x-0 md:transition-all"
+     [ngClass]="[(isCollapsed() ? 'md:w-16' : 'md:w-64'), mobileOpen() ? 'translate-x-0 shadow-2xl shadow-black/60' : '-translate-x-full']">
 
   <!-- Header / Logo -->
-  <div class="h-14 flex items-center px-4 border-b border-zinc-800 justify-between">
+  <div class="h-14 flex items-center px-4 border-b border-zinc-800 justify-between gap-2">
     <div class="flex items-center gap-2.5 overflow-hidden">
       <div class="h-7 w-7 bg-white rounded flex items-center justify-center shrink-0">
         <lucide-icon name="layers" class="text-black h-4 w-4"></lucide-icon>
       </div>
-      @if (!isCollapsed()) {
+      @if (showLabels()) {
         <span class="font-medium tracking-tight text-white text-sm whitespace-nowrap animate-fade-in">TaskManager</span>
       }
     </div>
+    <button type="button" (click)="closed.emit()" aria-label="Cerrar menú" title="Cerrar menú"
+            class="md:hidden -mr-1 rounded-lg p-1.5 text-zinc-500 transition-colors hover:bg-zinc-900 hover:text-white">
+      <lucide-icon name="x" class="h-4 w-4"></lucide-icon>
+    </button>
   </div>
 
   <!-- Links de Navegación -->
-  <div class="flex-1 py-4 px-2 space-y-1">
-    <a routerLink="/dashboard/kanban" routerLinkActive="bg-zinc-900 text-white"
+  <div class="flex-1 overflow-y-auto py-4 px-2 space-y-1">
+    <a routerLink="/dashboard/kanban" routerLinkActive="bg-zinc-900 text-white" (click)="closeMobile()"
        class="flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-zinc-200 rounded-lg text-sm transition-colors group">
       <lucide-icon name="check-square" class="h-4 w-4 group-hover:text-white"></lucide-icon>
-      @if (!isCollapsed()) {
+      @if (showLabels()) {
         <span class="animate-fade-in">Tablero Kanban</span>
       }
     </a>
@@ -26,13 +30,13 @@
     <!-- SECCIÓN EXCLUSIVA DE ADMINISTRADOR -->
     @if (isAdmin()) {
       <div class="pt-2 mt-2 border-t border-zinc-900">
-        @if (!isCollapsed()) {
+        @if (showLabels()) {
           <span class="px-3 text-[10px] font-semibold text-amber-500 uppercase tracking-wider block mb-2">Administración</span>
         }
-        <a routerLink="/dashboard/admin/users" routerLinkActive="bg-zinc-900 text-white"
+        <a routerLink="/dashboard/admin/users" routerLinkActive="bg-zinc-900 text-white" (click)="closeMobile()"
            class="flex items-center gap-3 px-3 py-2 text-amber-400 hover:text-amber-300 rounded-lg text-sm transition-colors group">
           <lucide-icon name="shield-alert" class="h-4 w-4 group-hover:text-amber-300"></lucide-icon>
-          @if (!isCollapsed()) {
+          @if (showLabels()) {
             <span class="animate-fade-in">Gestión de Usuarios</span>
           }
         </a>
@@ -41,32 +45,32 @@
 
     <!-- Proyectos -->
     <div class="pt-4 mt-2 border-t border-zinc-900">
-      @if (!isCollapsed()) {
+      @if (showLabels()) {
         <span class="px-3 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider block mb-2">Proyectos</span>
       }
-      <a routerLink="/dashboard/projects" routerLinkActive="bg-zinc-900 text-white"
+      <a routerLink="/dashboard/projects" routerLinkActive="bg-zinc-900 text-white" (click)="closeMobile()"
          class="flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-zinc-200 rounded-lg text-sm">
         <lucide-icon name="folder" class="h-4 w-4"></lucide-icon>
-        @if (!isCollapsed()) {
+        @if (showLabels()) {
           <span class="animate-fade-in text-xs">Todos los proyectos</span>
         }
       </a>
-      @if (!isCollapsed()) {
+      @if (showLabels()) {
         <span class="px-3 pt-3 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider block">Favoritos</span>
       }
       @for (project of projectService.favoriteProjects(); track project.id) {
-        <a routerLink="/dashboard/projects" [queryParams]="{ favoritesOnly: true }" routerLinkActive="bg-zinc-900 text-white"
+        <a routerLink="/dashboard/projects" [queryParams]="{ favoritesOnly: true }" routerLinkActive="bg-zinc-900 text-white" (click)="closeMobile()"
            class="flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-zinc-200 rounded-lg text-sm" [title]="project.name">
           <lucide-icon name="star" class="h-4 w-4 text-amber-300"></lucide-icon>
-          @if (!isCollapsed()) { <span class="animate-fade-in truncate text-xs">{{ project.name }}</span> }
+          @if (showLabels()) { <span class="animate-fade-in truncate text-xs">{{ project.name }}</span> }
         </a>
       } @empty {
-        @if (!isCollapsed()) { <p class="px-3 py-1 text-[10px] text-zinc-600">Aún no hay favoritos</p> }
+        @if (showLabels()) { <p class="px-3 py-1 text-[10px] text-zinc-600">Aún no hay favoritos</p> }
       }
     </div>
-    <a routerLink="/dashboard/subscription" routerLinkActive="bg-zinc-900 text-white" class="flex items-center gap-3 rounded-lg px-3 py-2 text-zinc-400 hover:text-zinc-200 text-sm">
+    <a routerLink="/dashboard/subscription" routerLinkActive="bg-zinc-900 text-white" (click)="closeMobile()" class="flex items-center gap-3 rounded-lg px-3 py-2 text-zinc-400 hover:text-zinc-200 text-sm">
       <lucide-icon name="credit-card" class="h-4 w-4"></lucide-icon>
-      @if (!isCollapsed()) { <span class="text-xs">Planes y pagos</span> }
+      @if (showLabels()) { <span class="text-xs">Planes y pagos</span> }
     </a>
   </div>
 
@@ -77,14 +81,14 @@
   </button>
 
   <!-- Perfil de Usuario y Logout -->
-  <div class="p-3 border-t border-zinc-800 flex items-center justify-between">
+  <div class="p-3 border-t border-zinc-800 flex items-center justify-between gap-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:pb-3">
     <div class="flex items-center gap-2.5 overflow-hidden">
       @if (avatarUrl()) {
         <img [src]="avatarUrl()!" class="h-7 w-7 rounded-full bg-zinc-800 object-cover border border-zinc-700 shrink-0" [alt]="displayName()">
       } @else {
-        <span class="flex h-7 w-7 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-[10px] font-semibold text-zinc-200" aria-hidden="true">{{ avatarInitials() }}</span>
+        <span class="flex h-7 w-7 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-[10px] font-semibold text-zinc-200 shrink-0" aria-hidden="true">{{ avatarInitials() }}</span>
       }
-      @if (!isCollapsed()) {
+      @if (showLabels()) {
         <div class="flex flex-col overflow-hidden animate-fade-in">
           <span class="text-xs font-medium text-zinc-200 truncate">{{ displayName() }}</span>
           <div class="flex items-center gap-1.5">
@@ -95,14 +99,14 @@
                 [ngClass]="roleBadgeClasses(userRole()) + ' border'">
             {{ userRole() }}
           </span>
-          <a routerLink="/dashboard/subscription" class="mt-1 inline-flex w-fit items-center gap-1 rounded border border-sky-900/70 bg-sky-950/50 px-1.5 py-0.5 text-[9px] font-bold uppercase text-sky-300 hover:bg-sky-900/60">
+          <a routerLink="/dashboard/subscription" (click)="closeMobile()" class="mt-1 inline-flex w-fit items-center gap-1 rounded border border-sky-900/70 bg-sky-950/50 px-1.5 py-0.5 text-[9px] font-bold uppercase text-sky-300 hover:bg-sky-900/60">
             <lucide-icon name="credit-card" class="h-3 w-3"></lucide-icon>{{ subscriptionService.subscription()?.tier || 'FREE' }}
           </a>
         </div>
       }
     </div>
-    @if (!isCollapsed()) {
-      <button (click)="authService.logout()" class="text-zinc-500 hover:text-white transition-colors p-1 rounded hover:bg-zinc-900 animate-fade-in" title="Cerrar sesión">
+    @if (showLabels()) {
+      <button (click)="authService.logout()" class="text-zinc-500 hover:text-white transition-colors p-1 rounded hover:bg-zinc-900 animate-fade-in shrink-0" title="Cerrar sesión" aria-label="Cerrar sesión">
         <lucide-icon name="log-out" class="h-3.5 w-3.5"></lucide-icon>
       </button>
     }
