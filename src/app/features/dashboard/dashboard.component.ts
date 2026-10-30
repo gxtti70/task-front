@@ -57,7 +57,7 @@ import { catchError } from 'rxjs/operators';
 export class DashboardComponent implements OnInit {
   private announcements = inject(AnnouncementService);
   private subscriptions = inject(SubscriptionService);
-  private auth = inject(AuthService);
+  readonly auth = inject(AuthService);
   readonly welcome = signal<Announcement | null>(null);
   readonly rememberWelcome = signal(true);
   readonly mobileNavOpen = signal(false);
