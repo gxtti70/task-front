@@ -48,6 +48,10 @@ export class LoginComponent implements OnInit {
     });
   }
 
+  onGoogleLogin(): void {
+    this.authService.loginWithGoogle();
+  }
+
   private returnTo(): string {
     const requested = this.route.snapshot.queryParamMap.get('returnTo');
     return requested?.startsWith('/dashboard/') && !requested.startsWith('//') ? requested : '/dashboard/kanban';

@@ -84,4 +84,28 @@ export class RegisterComponent implements OnInit {
       }
     });
   }
+
+  onGoogleRegister(): void {
+    if (!this.acceptTerms || !this.acceptPrivacy) {
+      this.toast.error('Debes aceptar los Términos y Condiciones y la Política de Tratamiento de Datos Personales.', 'Aceptación requerida');
+      return;
+    }
+    if (!this.legalVersions) {
+      this.toast.error('No pudimos cargar los documentos legales. Recarga la página e inténtalo de nuevo.', 'Documentos no disponibles');
+      return;
+    }
+    this.isLoading.set(true);
+    this.authService.prepareGoogleRegistration({
+      acceptTerms: true,
+      acceptPrivacy: true,
+      termsVersion: this.legalVersions.termsVersion,
+      privacyVersion: this.legalVersions.privacyVersion
+    }).subscribe({
+      next: () => this.authService.loginWithGoogle(),
+      error: err => {
+        this.isLoading.set(false);
+        this.toast.errorFor(err, 'No se pudo iniciar el registro con Google.');
+      }
+    });
+  }
 }

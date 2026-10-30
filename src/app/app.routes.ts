@@ -5,6 +5,11 @@ import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   {
+    path: 'auth/google/callback',
+    data: { title: 'Acceso con Google | TaskManager' },
+    loadComponent: () => import('./features/auth/google-auth-callback.component').then(m => m.GoogleAuthCallbackComponent)
+  },
+  {
     path: '',
     redirectTo: 'dashboard/kanban',
     pathMatch: 'full'

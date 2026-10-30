@@ -48,6 +48,18 @@ export class AuthService {
     );
   }
 
+  /** Starts the backend-managed Google OAuth flow. The backend must establish
+   * the same HttpOnly cookie session used by password login before redirecting
+   * to /auth/google/callback.
+   */
+  loginWithGoogle(): void {
+    window.location.assign(`${environment.apiUrl}/oauth2/authorization/google`);
+  }
+
+  prepareGoogleRegistration(consent: { acceptTerms: true; acceptPrivacy: true; termsVersion: string; privacyVersion: string }): Observable<void> {
+    return this.http.post<void>(`${this.API_URL}/google/consent`, consent, { withCredentials: true });
+  }
+
   loadProfile(): Observable<User> {
     return this.http.get<User>(`${this.API_URL}/me`, { withCredentials: true }).pipe(
       tap(profile => this.setCurrentProfile(profile))
