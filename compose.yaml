@@ -53,6 +53,10 @@ services:
       STRIPE_PREMIUM_PRICE: ${STRIPE_PREMIUM_PRICE:-}
       STRIPE_PLUS_PRICE: ${STRIPE_PLUS_PRICE:-}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4300}
+      GOOGLE_OAUTH_ENABLED: ${GOOGLE_OAUTH_ENABLED:-false}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:4300/login/oauth2/code/google}
     ports:
       - "127.0.0.1:8082:8080"
     volumes:

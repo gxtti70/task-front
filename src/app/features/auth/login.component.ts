@@ -23,6 +23,12 @@ export class LoginComponent implements OnInit {
   isLoading = signal(false);
 
   ngOnInit(): void {
+    const googleError = this.route.snapshot.queryParamMap.get('googleError');
+    if (googleError === 'not_configured') {
+      this.toast.error('El acceso con Google aún no está configurado en el servidor.');
+    } else if (googleError) {
+      this.toast.error('Google no pudo verificar el acceso. Inténtalo de nuevo.');
+    }
     //Si ya hay una sesión activa, lo redirigimos directo al Kanban
     if (this.authService.isAuthenticated()) {
       void this.router.navigateByUrl(this.returnTo());

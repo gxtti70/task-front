@@ -53,7 +53,7 @@ export class AuthService {
    * to /auth/google/callback.
    */
   loginWithGoogle(): void {
-    window.location.assign(`${environment.apiUrl}/oauth2/authorization/google`);
+    window.location.assign(`${this.API_URL}/google/authorize`);
   }
 
   prepareGoogleRegistration(consent: { acceptTerms: true; acceptPrivacy: true; termsVersion: string; privacyVersion: string }): Observable<void> {
