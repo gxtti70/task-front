@@ -135,7 +135,7 @@ export class ChatComponent implements OnInit {
     if (contentType.includes('pdf')) return 'file-text';
     if (contentType.includes('word') || contentType.includes('document')) return 'file-text';
     if (contentType.includes('excel') || contentType.includes('spreadsheet')) return 'file';
-    if (contentType.includes('zip') || contentType.includes('compressed')) return 'file-zip';
+    if (contentType.includes('zip') || contentType.includes('compressed')) return 'file';
     return 'paperclip';
   }
 

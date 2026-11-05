@@ -4,7 +4,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { routes } from './app.routes';
 import { jwtInterceptor } from './core/interceptors/jwt.interceptor';
 import { GlobalErrorHandler } from './core/services/global-error-handler';
-import { LucideAngularModule, Plus, Search, Bell, Settings, UserRound, LogOut, CheckSquare, Layers, Folder, ChevronLeft, ChevronRight, Sliders, X, ShieldAlert, CreditCard, Sparkles, Check, Crown, Star, Paperclip, Download, Trash2, Upload, FolderPlus, FileQuestionMark, ShieldX, ServerCrash, Home, Lock, Menu, ChevronDown, MessageSquare, Hash, MessageCircle, Send } from 'lucide-angular';
+import { LucideAngularModule, Plus, Search, Bell, Settings, UserRound, LogOut, CheckSquare, Layers, Folder, ChevronLeft, ChevronRight, Sliders, X, ShieldAlert, CreditCard, Sparkles, Check, Crown, Star, Paperclip, Download, Trash2, Upload, FolderPlus, FileQuestionMark, ShieldX, ServerCrash, Home, Lock, Menu, ChevronDown, MessageSquare, Hash, MessageCircle, Send, FileText, Headphones, Image, Film, File } from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -26,7 +26,7 @@ export const appConfig: ApplicationConfig = {
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
     importProvidersFrom(
       LucideAngularModule.pick({
-        Plus, Search, Bell, Settings, UserRound, LogOut, CheckSquare, Layers, Folder, ChevronLeft, ChevronRight, Sliders, X, ShieldAlert, CreditCard, Sparkles, Check, Crown, Star, Paperclip, Download, Trash2, Upload, FolderPlus, FileQuestionMark, ShieldX, ServerCrash, Home, Lock, Menu, ChevronDown, MessageSquare, Hash, MessageCircle, Send
+        Plus, Search, Bell, Settings, UserRound, LogOut, CheckSquare, Layers, Folder, ChevronLeft, ChevronRight, Sliders, X, ShieldAlert, CreditCard, Sparkles, Check, Crown, Star, Paperclip, Download, Trash2, Upload, FolderPlus, FileQuestionMark, ShieldX, ServerCrash, Home, Lock, Menu, ChevronDown, MessageSquare, Hash, MessageCircle, Send, FileText, Headphones, Image, Film, File
       })
     )
   ]
