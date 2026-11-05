@@ -21,6 +21,11 @@
                   : 'text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200'">
           <lucide-icon name="hash" class="h-4 w-4 shrink-0"></lucide-icon>
           <span class="truncate">{{ channelLabel(channel) }}</span>
+          @if (chat.getUnreadCount(channel.id) > 0) {
+            <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-lg">
+              {{ chat.getUnreadCount(channel.id) > 9 ? '9+' : chat.getUnreadCount(channel.id) }}
+            </span>
+          }
         </button>
       } @empty {
         <p class="px-2.5 py-1 text-[11px] text-zinc-600">Aún no perteneces a una sala.</p>
@@ -34,6 +39,11 @@
                   : 'text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200'">
           <lucide-icon name="message-circle" class="h-4 w-4 shrink-0 text-sky-300"></lucide-icon>
           <span class="truncate">{{ channelLabel(channel) }}</span>
+          @if (chat.getUnreadCount(channel.id) > 0) {
+            <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-lg">
+              {{ chat.getUnreadCount(channel.id) > 9 ? '9+' : chat.getUnreadCount(channel.id) }}
+            </span>
+          }
         </button>
       } @empty {
         <p class="px-2.5 py-1 text-[11px] text-zinc-600">Abre un DM desde el botón +.</p>
@@ -64,6 +74,11 @@
                   : 'text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200'">
           <lucide-icon name="hash" class="h-4 w-4 shrink-0"></lucide-icon>
           <span class="truncate">{{ channelLabel(channel) }}</span>
+          @if (chat.getUnreadCount(channel.id) > 0) {
+            <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-lg">
+              {{ chat.getUnreadCount(channel.id) > 9 ? '9+' : chat.getUnreadCount(channel.id) }}
+            </span>
+          }
         </button>
       } @empty {
         <p class="px-2.5 py-1 text-[11px] text-zinc-600">Aún no perteneces a una sala.</p>
@@ -77,6 +92,11 @@
                   : 'text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200'">
           <lucide-icon name="message-circle" class="h-4 w-4 shrink-0 text-sky-300"></lucide-icon>
           <span class="truncate">{{ channelLabel(channel) }}</span>
+          @if (chat.getUnreadCount(channel.id) > 0) {
+            <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-lg">
+              {{ chat.getUnreadCount(channel.id) > 9 ? '9+' : chat.getUnreadCount(channel.id) }}
+            </span>
+          }
         </button>
       } @empty {
         <p class="px-2.5 py-1 text-[11px] text-zinc-600">Abre un DM desde el botón +.</p>

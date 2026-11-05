@@ -34,6 +34,7 @@ export class ChatService {
   readonly loadingOlderMessages = signal(false);
   readonly sendingMessage = signal(false);
   readonly typingUsers = signal<Map<string, string>>(new Map());
+  readonly unreadCounts = signal<Map<string, number>>(new Map());
 
   loadChannels(): Observable<Channel[]> {
     return this.http.get<Channel[]>(this.url).pipe(tap(list => this.channels.set(list)));
@@ -118,6 +119,36 @@ export class ChatService {
       },
       error: () => {}
     });
+  }
+
+  fetchUnreadCounts(): void {
+    this.http.get<Record<string, number>>(`${this.url}/unread-counts`).subscribe({
+      next: counts => {
+        const map = new Map<string, number>();
+        for (const [channelId, count] of Object.entries(counts)) {
+          map.set(channelId, count);
+        }
+        this.unreadCounts.set(map);
+      },
+      error: () => {}
+    });
+  }
+
+  markAsRead(channelId: string): void {
+    this.http.post(`${this.url}/${channelId}/read`, null).subscribe({
+      next: () => {
+        this.unreadCounts.update(map => {
+          const next = new Map(map);
+          next.set(channelId, 0);
+          return next;
+        });
+      },
+      error: () => {}
+    });
+  }
+
+  getUnreadCount(channelId: string): number {
+    return this.unreadCounts().get(channelId) ?? 0;
   }
 
   createChannel(request: ChannelRequest): Observable<Channel> {

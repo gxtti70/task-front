@@ -6,6 +6,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { roleBadgeClasses } from '../../core/utils/role-style';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { ProjectService } from '../../core/services/project.service';
+import { ChatService } from '../../core/services/chat.service';
 import { ToastService } from '../../core/services/toast.service';
 
 @Component({
@@ -18,6 +19,7 @@ export class SidebarComponent implements OnInit {
   public authService = inject(AuthService);
   public subscriptionService = inject(SubscriptionService);
   public projectService = inject(ProjectService);
+  public chatService = inject(ChatService);
   private toast = inject(ToastService);
   isCollapsed = signal(false);
 
@@ -34,10 +36,20 @@ export class SidebarComponent implements OnInit {
   /** Labels are always visible on the mobile drawer, even if the desktop rail is collapsed. */
   public showLabels = computed(() => !this.isCollapsed() || this.mobileOpen());
 
+  /** Total de mensajes no leídos en todos los canales del chat. */
+  public unreadTotal = computed(() => {
+    let total = 0;
+    for (const count of this.chatService.unreadCounts().values()) {
+      total += count;
+    }
+    return total;
+  });
+
   ngOnInit(): void {
     this.projectService.loadFavoriteProjects().subscribe({
       error: err => this.toast.errorFor(err, 'No se pudieron cargar los proyectos favoritos.')
     });
+    this.chatService.fetchUnreadCounts();
   }
 
   // Prioriza el nombre completo, username, name o el correo electrónico de forma limpia

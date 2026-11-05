@@ -71,12 +71,18 @@ export class ChatComponent implements OnInit {
 
   ngOnInit(): void {
     this.chat.pollWhenVisible();
+    this.chat.fetchUnreadCounts();
     this.projectService.getProjects().subscribe({ next: list => this.projectList.set(list) });
     this.userDirectory.getActiveUsers().subscribe({ next: list => this.userList.set(list) });
     // Sondeo cada 4 s solo mientras la pestaña esté visible, fuera de la zona para no saturar el detector de cambios.
     this.zone.runOutsideAngular(() => {
       const poller = setInterval(() => {
-        if (document.visibilityState === 'visible') this.zone.run(() => this.chat.pollWhenVisible());
+        if (document.visibilityState === 'visible') {
+          this.zone.run(() => {
+            this.chat.pollWhenVisible();
+            this.chat.fetchUnreadCounts();
+          });
+        }
       }, this.chat.pollIntervalMs);
       this.destroyRef.onDestroy(() => clearInterval(poller));
     });
@@ -214,6 +220,7 @@ export class ChatComponent implements OnInit {
 
   openChannelAndCloseSidebar(channelId: string): void {
     this.chat.openChannel(channelId);
+    this.chat.markAsRead(channelId);
     if (this.sidebarOpen()) this.toggleSidebar();
   }
 

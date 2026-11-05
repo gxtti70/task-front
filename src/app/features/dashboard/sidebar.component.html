@@ -28,10 +28,15 @@
     </a>
 
     <a routerLink="/dashboard/chat" routerLinkActive="bg-zinc-900 text-white" (click)="closeMobile()"
-       class="flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-zinc-200 rounded-lg text-sm transition-colors group">
+       class="flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-zinc-200 rounded-lg text-sm transition-colors group relative">
       <lucide-icon name="message-square" class="h-4 w-4 group-hover:text-white"></lucide-icon>
       @if (showLabels()) {
         <span class="animate-fade-in">Chat</span>
+      }
+      @if (unreadTotal() > 0) {
+        <span class="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-lg">
+          {{ unreadTotal() > 9 ? '9+' : unreadTotal() }}
+        </span>
       }
     </a>
 
