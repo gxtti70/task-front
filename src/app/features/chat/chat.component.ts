@@ -133,6 +133,11 @@ export class ChatComponent implements OnInit {
     this.sidebarOpen.update(v => !v);
   }
 
+  openChannelAndCloseSidebar(channelId: string): void {
+    this.chat.openChannel(channelId);
+    if (this.sidebarOpen()) this.toggleSidebar();
+  }
+
   submitRoom(): void {
     const projectId = this.roomProjectId();
     const name = this.roomName().trim();

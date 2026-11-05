@@ -14,7 +14,7 @@
     <div class="flex-1 space-y-1 overflow-y-auto px-2 py-2">
       <h3 class="px-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Salas de proyecto</h3>
       @for (channel of rooms(); track channel.id) {
-        <button type="button" (click)="chat.openChannel(channel.id)" [title]="channelLabel(channel)"
+        <button type="button" (click)="openChannelAndCloseSidebar(channel.id)" [title]="channelLabel(channel)"
                 class="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors"
                 [ngClass]="channel.id === chat.activeChannelId()
                   ? 'bg-zinc-900 text-white'
@@ -27,7 +27,7 @@
       }
       <h3 class="mt-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Mensajes directos</h3>
       @for (channel of directs(); track channel.id) {
-        <button type="button" (click)="chat.openChannel(channel.id)" [title]="channelLabel(channel)"
+        <button type="button" (click)="openChannelAndCloseSidebar(channel.id)" [title]="channelLabel(channel)"
                 class="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors"
                 [ngClass]="channel.id === chat.activeChannelId()
                   ? 'bg-zinc-900 text-white'
@@ -41,8 +41,10 @@
     </div>
   </aside>
 
-  <!-- Drawer móvil de canales -->
-  <div *ngIf="sidebarOpen()" class="fixed inset-y-0 left-0 w-56 z-50 flex flex-col overflow-hidden rounded-l-none border-r border-zinc-900/70 bg-zinc-950/40 shadow-xl md:hidden" aria-label="Lista de canales">
+  <!-- Drawer móvil de canales (backdrop) -->
+  <div *ngIf="sidebarOpen()" class="fixed inset-0 z-40 bg-zinc-950/60 backdrop-blur-sm md:hidden" (click)="toggleSidebar()"></div>
+
+  <div *ngIf="sidebarOpen()" class="fixed inset-y-0 left-0 w-56 z-50 flex flex-col overflow-hidden rounded-l-none border-r border-zinc-900/70 bg-zinc-950/40 shadow-xl md:hidden transition-transform duration-300 ease-in-out" aria-label="Lista de canales">
     <header class="flex items-center justify-between border-b border-zinc-900/70 px-4 py-3">
       <span class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
         <lucide-icon name="message-square" class="h-4 w-4"></lucide-icon>
@@ -55,7 +57,7 @@
     <div class="flex-1 space-y-1 overflow-y-auto px-2 py-2">
       <h3 class="px-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Salas de proyecto</h3>
       @for (channel of rooms(); track channel.id) {
-        <button type="button" (click)="chat.openChannel(channel.id)" [title]="channelLabel(channel)"
+        <button type="button" (click)="openChannelAndCloseSidebar(channel.id)" [title]="channelLabel(channel)"
                 class="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors"
                 [ngClass]="channel.id === chat.activeChannelId()
                   ? 'bg-zinc-900 text-white'
@@ -68,7 +70,7 @@
       }
       <h3 class="mt-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Mensajes directos</h3>
       @for (channel of directs(); track channel.id) {
-        <button type="button" (click)="chat.openChannel(channel.id)" [title]="channelLabel(channel)"
+        <button type="button" (click)="openChannelAndCloseSidebar(channel.id)" [title]="channelLabel(channel)"
                 class="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors"
                 [ngClass]="channel.id === chat.activeChannelId()
                   ? 'bg-zinc-900 text-white'
