@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test';
 
 test('unknown paths show a titled not-found page', async ({ page }) => {
   await page.goto('/this-route-does-not-exist');
-  await expect(page.getByRole('heading', { name: 'No encontramos esa página' })).toBeVisible();
+  // El wildcard carga shared/pages/not-found.component (no features/not-found).
+  await expect(page.getByRole('heading', { name: 'Esta página se perdió en el tablero' })).toBeVisible();
   await expect(page).toHaveTitle('Página no encontrada | TaskManager');
 });
 

@@ -63,6 +63,39 @@ export interface TaskComment {
   createdAt: string;
 }
 
+export type ChannelType = 'TEXT' | 'VOICE';
+
+export interface Channel {
+  id: string;
+  type: ChannelType;
+  /** Nombre visible en salas de proyecto; en DMs el backend lo devuelve null. */
+  name: string | null;
+  projectId: string | null;
+  /** Contraparte del DM (null en salas de proyecto). */
+  otherUserId?: string | null;
+  otherUserName?: string | null;
+  createdAt: string;
+}
+
+export interface ChannelRequest {
+  projectId: string;
+  name: string;
+  type?: string;
+}
+
+export interface DirectChannelRequest {
+  memberId: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  body: string;
+  authorId: string;
+  authorName: string;
+  authorEmail: string;
+  createdAt: string;
+}
+
 export interface Project {
   id: string;
   name: string;

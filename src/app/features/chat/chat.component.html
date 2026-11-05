@@ -1,0 +1,189 @@
+<div class="flex gap-4 h-[calc(100dvh-12rem)] min-h-[30rem] md:h-[calc(100dvh-8rem)]">
+  <!-- Columna de canales -->
+  <aside class="flex w-56 shrink-0 flex-col overflow-hidden rounded-2xl border border-zinc-900/70 bg-zinc-950/40" aria-label="Lista de canales">
+    <header class="flex items-center justify-between border-b border-zinc-900/70 px-4 py-3">
+      <span class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+        <lucide-icon name="message-square" class="h-4 w-4"></lucide-icon>
+        Chat
+      </span>
+      <button type="button" class="premium-icon-button" title="Nueva conversación" aria-label="Nueva conversación"
+              (click)="openDialog('room')">
+        <lucide-icon name="plus" class="h-4 w-4"></lucide-icon>
+      </button>
+    </header>
+    <div class="flex-1 space-y-1 overflow-y-auto px-2 py-2">
+      <h3 class="px-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Salas de proyecto</h3>
+      @for (channel of rooms(); track channel.id) {
+        <button type="button" (click)="chat.openChannel(channel.id)" [title]="channelLabel(channel)"
+                class="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors"
+                [ngClass]="channel.id === chat.activeChannelId()
+                  ? 'bg-zinc-900 text-white'
+                  : 'text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200'">
+          <lucide-icon name="hash" class="h-4 w-4 shrink-0"></lucide-icon>
+          <span class="truncate">{{ channelLabel(channel) }}</span>
+        </button>
+      } @empty {
+        <p class="px-2.5 py-1 text-[11px] text-zinc-600">Aún no perteneces a una sala.</p>
+      }
+      <h3 class="mt-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Mensajes directos</h3>
+      @for (channel of directs(); track channel.id) {
+        <button type="button" (click)="chat.openChannel(channel.id)" [title]="channelLabel(channel)"
+                class="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors"
+                [ngClass]="channel.id === chat.activeChannelId()
+                  ? 'bg-zinc-900 text-white'
+                  : 'text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200'">
+          <lucide-icon name="message-circle" class="h-4 w-4 shrink-0 text-sky-300"></lucide-icon>
+          <span class="truncate">{{ channelLabel(channel) }}</span>
+        </button>
+      } @empty {
+        <p class="px-2.5 py-1 text-[11px] text-zinc-600">Abre un DM desde el botón +.</p>
+      }
+    </div>
+  </aside>
+
+  <!-- Panel de conversación -->
+  <section class="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-900/70 bg-zinc-950/40">
+    @if (chat.activeChannel(); as channel) {
+      <header class="flex items-center justify-between border-b border-zinc-900/70 px-4 py-3">
+        <h2 class="flex items-center gap-2 truncate text-sm font-semibold text-zinc-100">
+          @if (channel.projectId !== null) {
+            <lucide-icon name="hash" class="h-4 w-4 text-zinc-500"></lucide-icon>
+          } @else {
+            <lucide-icon name="message-circle" class="h-4 w-4 text-sky-300"></lucide-icon>
+          }
+          {{ channelLabel(channel) }}
+        </h2>
+        <span class="text-[10px] uppercase tracking-wider text-zinc-600">
+          {{ channel.projectId !== null ? 'Sala de proyecto' : 'Mensaje directo' }}
+        </span>
+      </header>
+
+      <div #messagesScroller (scroll)="onScroll($event)" class="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4" aria-label="Mensajes">
+        @if (chat.loadingMessages() && !chat.messages().length) {
+          @for (line of [1, 2, 3]; track line) {
+            <app-skeleton skeletonClass="h-10 w-3/4"></app-skeleton>
+          }
+        } @else if (!chat.messages().length) {
+          <p class="pt-10 text-center text-xs text-zinc-600">Aún no hay mensajes. Estrena la conversación…</p>
+        }
+        @for (message of chat.messages(); track message.id) {
+          <article class="flex gap-3"
+                   [ngClass]="message.authorId === currentUserId() ? 'justify-end' : ''">
+            @if (message.authorId !== currentUserId()) {
+              <span aria-hidden="true"
+                    class="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-[10px] font-semibold text-zinc-200">
+                {{ initialsOf(message.authorName) }}
+              </span>
+            }
+            <div class="max-w-[75%]">
+              <p class="text-[10px] text-zinc-500" [ngClass]="message.authorId === currentUserId() ? 'text-right' : ''">
+                {{ message.authorName }} · {{ message.createdAt | date:'shortTime' }}
+              </p>
+              <p class="mt-0.5 whitespace-pre-line rounded-xl px-3 py-2 text-sm leading-relaxed"
+                 [ngClass]="message.authorId === currentUserId()
+                   ? 'bg-sky-950/60 text-zinc-100'
+                   : 'bg-zinc-900/80 text-zinc-200'">
+                {{ message.body }}
+              </p>
+            </div>
+          </article>
+        }
+        @if (chat.loadingOlderMessages()) {
+          <p class="text-center text-[11px] text-zinc-600">Cargando mensajes anteriores…</p>
+        }
+      </div>
+
+      <footer class="border-t border-zinc-900/70 p-3">
+        <div class="flex items-end gap-2">
+          <textarea name="chatDraft" rows="1" maxlength="2000" placeholder="Escribe un mensaje…"
+                    aria-label="Escribe un mensaje" class="premium-control min-h-[2.75rem] flex-1 resize-none"
+                    [ngModel]="draft()" (ngModelChange)="draft.set($event)"
+                    (keydown)="onComposerKeydown($event)"></textarea>
+          <button type="button" class="premium-primary-button px-3" title="Enviar mensaje" aria-label="Enviar mensaje"
+                  [disabled]="!draft().trim() || chat.sendingMessage()"
+                  (click)="onSendClick()">
+            <lucide-icon name="send" class="h-4 w-4"></lucide-icon>
+          </button>
+        </div>
+        <p class="mt-1 text-right text-[10px] text-zinc-600">{{ draft().length }}/2000 · Enter envía, Shift+Enter salta de línea</p>
+      </footer>
+    } @else {
+      <div class="flex flex-1 flex-col items-center justify-center gap-2 text-sm text-zinc-500">
+        <lucide-icon name="message-square" class="h-6 w-6 text-zinc-700"></lucide-icon>
+        <p>Selecciona un canal o abre un mensaje directo</p>
+      </div>
+    }
+  </section>
+</div>
+
+<!-- Diálogo: nueva sala / nuevo DM -->
+@if (dialogOpen()) {
+  <div class="premium-overlay" (click)="closeDialog()">
+    <section appFocusTrap class="premium-dialog flex w-full max-w-md flex-col overflow-hidden" role="dialog" aria-modal="true"
+             aria-labelledby="chat-dialog-title" (click)="$event.stopPropagation()">
+      <header class="premium-dialog-header px-6 py-4">
+        <div class="flex items-center justify-between gap-3">
+          <h2 id="chat-dialog-title" class="text-sm font-semibold text-white">Nueva conversación</h2>
+          <button type="button" class="premium-icon-button" title="Cerrar" aria-label="Cerrar" (click)="closeDialog()">
+            <lucide-icon name="x" class="h-4 w-4"></lucide-icon>
+          </button>
+        </div>
+        <div class="mt-3 flex gap-2">
+          <button type="button" class="premium-control text-xs"
+                  [ngClass]="dialogTab() === 'room' ? 'text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'"
+                  (click)="switchDialogTab('room')">
+            <span class="flex items-center gap-1.5"><lucide-icon name="hash" class="h-3.5 w-3.5"></lucide-icon>Sala de proyecto</span>
+          </button>
+          <button type="button" class="premium-control text-xs"
+                  [ngClass]="dialogTab() === 'dm' ? 'text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'"
+                  (click)="switchDialogTab('dm')">
+            <span class="flex items-center gap-1.5"><lucide-icon name="message-circle" class="h-3.5 w-3.5"></lucide-icon>Mensaje directo</span>
+          </button>
+        </div>
+      </header>
+      <div class="min-h-0 flex-1 overflow-y-auto p-6">
+        @if (dialogTab() === 'room') {
+          @if (creatableProjects().length) {
+            <label for="room-project" class="block text-xs text-zinc-400">Proyecto</label>
+            <select id="room-project" name="roomProject" class="premium-control mt-1 w-full"
+                    [ngModel]="roomProjectId()" (ngModelChange)="roomProjectId.set($event)">
+              @for (project of creatableProjects(); track project.id) {
+                <option [value]="project.id">{{ project.name }}</option>
+              }
+            </select>
+            <label for="room-name" class="mt-4 block text-xs text-zinc-400">Nombre de la sala</label>
+            <input id="room-name" name="roomName" maxlength="100" placeholder="Ej. Diseño QA" class="premium-control mt-1 w-full"
+                   [ngModel]="roomName()" (ngModelChange)="roomName.set($event)">
+            <button type="button" class="premium-primary-button mt-4 w-full" [disabled]="creating() || !roomName().trim()"
+                    (click)="submitRoom()">
+              {{ creating() ? 'Creando…' : 'Crear sala' }}
+            </button>
+          } @else {
+            <p class="text-xs text-zinc-500">Solo el propietario del proyecto o un administrador puede crear salas.</p>
+          }
+        } @else {
+          <label for="dm-search" class="block text-xs text-zinc-400">Buscar persona</label>
+          <input id="dm-search" name="dmSearch" placeholder="Nombre o correo…" class="premium-control mt-1 w-full"
+                 [ngModel]="dmSearch()" (ngModelChange)="dmSearch.set($event)">
+          <ul class="mt-3 space-y-1">
+            @for (user of filteredUsers(); track user.id) {
+              <li>
+                <button type="button" class="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm text-zinc-300 transition-colors hover:bg-zinc-900/60"
+                        (click)="openDirectDiscussion(user)">
+                  <span aria-hidden="true"
+                        class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-[10px] font-semibold text-zinc-200">
+                    {{ initialsOf(user.fullName ?? user.email) }}
+                  </span>
+                  <span class="min-w-0 flex-1 truncate">{{ user.fullName || user.email }}</span>
+                  <span class="truncate text-[11px] text-zinc-500">{{ user.email }}</span>
+                </button>
+              </li>
+            } @empty {
+              <li><p class="px-2.5 py-2 text-xs text-zinc-600">No hay coincidencias.</p></li>
+            }
+          </ul>
+        }
+      </div>
+    </section>
+  </div>
+}

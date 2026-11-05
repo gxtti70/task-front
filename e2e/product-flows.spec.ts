@@ -63,9 +63,24 @@ test('tasks can move between Kanban columns with drag and drop', async ({ page }
   await mockApplication(page, 'MANAGER');
   await page.goto('/dashboard/kanban');
   const card = page.locator('article[cdkdrag]').filter({ hasText: 'Ship the release' });
+  const doneColumn = page.locator('#kanban-DONE');
   await expect(card).toBeVisible();
-  await card.dragTo(page.locator('#kanban-DONE'));
-  await expect(card).toContainText('DONE');
+  await expect(doneColumn).toBeVisible();
+
+  // CDK no reacciona bien a dragTo en headless: se hace el arrastre con pasos de ratón.
+  const cardBox = await card.boundingBox();
+  const targetBox = await doneColumn.boundingBox();
+  if (!cardBox || !targetBox) throw new Error('No se obtuvieron las posiciones para arrastrar');
+  await page.mouse.move(cardBox.x + cardBox.width / 2, cardBox.y + cardBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + 60, { steps: 12 });
+  await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + 80, { steps: 6 });
+  await page.mouse.up();
+
+  // La tarjeta renderiza la etiqueta de la columna donde quedó tras el PATCH.
+  // Durante la animación del drop el placeholder/preview duplican la tarjeta:
+  // se aserciona con .first() para evitar la violación de strict mode.
+  await expect(card.first()).toContainText('Finalizado');
 });
 
 test('project plan limits surface a useful error', async ({ page }) => {
@@ -73,7 +88,7 @@ test('project plan limits surface a useful error', async ({ page }) => {
   await page.goto('/dashboard/projects');
   await page.getByRole('button', { name: 'Nuevo Proyecto' }).click();
   await page.locator('input[name="projectName"]').fill('Limit test');
-  await page.getByRole('button', { name: 'Guardar' }).click();
+  await page.getByRole('button', { name: 'Crear proyecto' }).click();
   await expect(page.getByRole('alert')).toContainText('Has alcanzado el límite de tu plan');
 });
 

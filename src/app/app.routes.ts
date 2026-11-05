@@ -53,6 +53,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/kanban/kanban.component').then(m => m.KanbanComponent)
       },
       {
+        path: 'chat',
+        data: { title: 'Chat | TaskManager' },
+        loadComponent: () => import('./features/chat/chat.component').then(m => m.ChatComponent)
+      },
+      {
         path: 'projects',
         data: { title: 'Proyectos | TaskManager' },
         loadComponent: () => import('./features/projects/projects.component').then(m => m.ProjectsComponent)
