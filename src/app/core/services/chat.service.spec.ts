@@ -61,6 +61,8 @@ describe('ChatService', () => {
     const req = http.expectOne('/api/channels/c-room/messages');
     expect(req.request.body).toEqual({ body: 'hola mundo' });
     req.flush(message('m2', '2026-01-01T00:01:00Z', 'hola mundo'));
+    // El remitente marca su propio mensaje como leído: no ve notificación de sí mismo.
+    http.expectOne('/api/channels/c-room/read').flush({});
     expect(service.messages().map(m => m.id)).toEqual(['m1', 'm2']);
 
     // Un sondeo posterior devuelve el mismo mensaje otra vez: no debe duplicarse.

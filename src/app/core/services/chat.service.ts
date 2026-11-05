@@ -88,6 +88,8 @@ export class ChatService {
       next: message => {
         this.sendingMessage.set(false);
         if (this.activeChannelId() === channelId) this.mergeMessages([message]);
+        // El remitente no ve su propio mensaje como no leído.
+        this.markAsRead(channelId);
       },
       error: () => this.sendingMessage.set(false)
     });
@@ -103,6 +105,8 @@ export class ChatService {
       next: message => {
         this.sendingMessage.set(false);
         if (this.activeChannelId() === channelId) this.mergeMessages([message]);
+        // El remitente no ve su propio archivo como no leído.
+        this.markAsRead(channelId);
       },
       error: () => this.sendingMessage.set(false)
     });
