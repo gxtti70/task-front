@@ -33,6 +33,7 @@ export class ChatService {
   readonly loadingMessages = signal(false);
   readonly loadingOlderMessages = signal(false);
   readonly sendingMessage = signal(false);
+  readonly typingUsers = signal<Map<string, string>>(new Map());
 
   loadChannels(): Observable<Channel[]> {
     return this.http.get<Channel[]>(this.url).pipe(tap(list => this.channels.set(list)));

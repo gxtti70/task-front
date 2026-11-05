@@ -104,6 +104,8 @@
         </span>
       </header>
 
+      <app-typing-indicator />
+
       <div #messagesScroller (scroll)="onScroll($event)" class="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4" aria-label="Mensajes">
         @if (chat.loadingMessages() && !chat.messages().length) {
           @for (line of [1, 2, 3]; track line) {
@@ -144,7 +146,8 @@
           <textarea name="chatDraft" rows="1" maxlength="2000" placeholder="Escribe un mensaje…"
                     aria-label="Escribe un mensaje" class="premium-control min-h-[2.75rem] flex-1 resize-none"
                     [ngModel]="draft()" (ngModelChange)="draft.set($event)"
-                    (keydown)="onComposerKeydown($event)"></textarea>
+                    (keydown)="onComposerKeydown($event)"
+                    (input)="onTyping()"></textarea>
           <button type="button" class="premium-primary-button px-3" title="Enviar mensaje" aria-label="Enviar mensaje"
                   [disabled]="!draft().trim() || chat.sendingMessage()"
                   (click)="onSendClick()">

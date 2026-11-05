@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { Channel, Project, User } from '../../core/models';
 import { ChatService } from '../../core/services/chat.service';
+import { TypingIndicatorComponent } from './typing-indicator.component';
 import { AuthService } from '../../core/services/auth.service';
 import { ProjectService } from '../../core/services/project.service';
 import { UserDirectoryService } from '../../core/services/user-directory.service';
@@ -14,7 +15,7 @@ import { SkeletonComponent } from '../../shared/ui/skeleton.component';
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, FocusTrapDirective, SkeletonComponent],
+  imports: [CommonModule, FormsModule, LucideAngularModule, FocusTrapDirective, SkeletonComponent, TypingIndicatorComponent],
   templateUrl: './chat.component.html'
 })
 export class ChatComponent implements OnInit {
@@ -55,6 +56,7 @@ export class ChatComponent implements OnInit {
 
   private readonly scroller = viewChild<HTMLElement>('messagesScroller');
   private lastScrolledMessageId = '';
+  private typingTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     effect(() => {
@@ -111,6 +113,30 @@ export class ChatComponent implements OnInit {
     const text = this.draft();
     this.chat.send(text);
     if (text.trim()) this.draft.set('');
+  }
+
+  onTyping(): void {
+    const selfId = this.currentUserId();
+    const selfName = this.auth.currentUser()?.fullName || this.auth.currentUser()?.email || 'Tú';
+    if (!selfId) return;
+
+    // Marca al usuario actual como escribiendo.
+    this.chat.typingUsers.update(map => {
+      const next = new Map(map);
+      next.set(selfId, selfName);
+      return next;
+    });
+
+    // Reinicia el temporizador para dejar de mostrar "escribiendo" tras 2s sin teclas.
+    if (this.typingTimeout) clearTimeout(this.typingTimeout);
+    this.typingTimeout = setTimeout(() => {
+      this.chat.typingUsers.update(map => {
+        const next = new Map(map);
+        next.delete(selfId);
+        return next;
+      });
+      this.typingTimeout = null;
+    }, 2000);
   }
 
   openDialog(tab: 'room' | 'dm'): void {
