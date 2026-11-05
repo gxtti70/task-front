@@ -142,6 +142,31 @@
                    : 'bg-zinc-900/80 text-zinc-200'">
                 {{ message.body }}
               </p>
+              @if (message.messageType === 'FILE') {
+                <div class="mt-1.5 flex items-start gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 max-w-[85%] sm:max-w-[75%]">
+                  <lucide-icon name="{{ getFileIcon(message.fileContentType) }}" class="h-4 w-4 shrink-0 mt-0.5"></lucide-icon>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-[10px] truncate text-zinc-300">{{ message.fileName }}</div>
+                    <div class="text-[10px] text-zinc-500">{{ formatFileSize(message.fileSizeBytes) }}</div>
+                  </div>
+                  @if (message.fileContentType?.startsWith('audio/')) {
+                    <audio controls class="h-6 w-24 shrink-0" [src]="message.downloadUrl"></audio>
+                  } @else if (message.fileContentType?.startsWith('image/')) {
+                    <img [src]="message.downloadUrl" alt="Imagen adjunta" class="max-w-xs max-h-24 rounded shrink-0">
+                  } @else {
+                    <button type="button" class="text-[10px] text-zinc-400 hover:text-zinc-200 underline shrink-0"
+                            (click)="onDownloadFile(message)">
+                      Descargar
+                    </button>
+                  }
+                  @if (message.authorId === currentUserId()) {
+                    <button type="button" class="premium-icon-button shrink-0" aria-label="Eliminar archivo"
+                            (click)="onDeleteFile(message)">
+                      <lucide-icon name="trash-2" class="h-3 w-3"></lucide-icon>
+                    </button>
+                  }
+                </div>
+              }
             </div>
           </article>
         }
@@ -152,17 +177,34 @@
 
       <footer class="border-t border-zinc-900/70 p-3">
         <div class="flex items-end gap-2">
+          <button type="button" class="premium-icon-button" aria-label="Adjuntar archivo"
+                  (click)="fileInput.click()">
+            <lucide-icon name="paperclip" class="h-4 w-4"></lucide-icon>
+          </button>
+          <input type="file" #fileInput class="hidden" (change)="onFileSelected($event)"
+                 accept="audio/*,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/*">
           <textarea name="chatDraft" rows="1" maxlength="2000" placeholder="Escribe un mensaje…"
                     aria-label="Escribe un mensaje" class="premium-control min-h-[2.75rem] flex-1 resize-none"
                     [ngModel]="draft()" (ngModelChange)="draft.set($event)"
                     (keydown)="onComposerKeydown($event)"
                     (input)="onTyping()"></textarea>
           <button type="button" class="premium-primary-button px-3" title="Enviar mensaje" aria-label="Enviar mensaje"
-                  [disabled]="!draft().trim() || chat.sendingMessage()"
-                  (click)="onSendClick()">
+                  [disabled]="(!draft().trim() && !selectedFile()) || chat.sendingMessage()"
+                  (click)="selectedFile() ? onSendFile() : onSendClick()">
             <lucide-icon name="send" class="h-4 w-4"></lucide-icon>
           </button>
         </div>
+        @if (selectedFile()) {
+          <div class="flex items-center gap-2 px-2 py-1 mt-1 text-xs rounded bg-zinc-800/50">
+            <lucide-icon name="{{ getFileIcon(selectedFile()!.type) }}" class="h-3 w-3 shrink-0"></lucide-icon>
+            <span class="truncate">{{ selectedFile()!.name }}</span>
+            <span class="text-zinc-500">({{ formatFileSize(selectedFile()!.size) }})</span>
+            <button type="button" class="premium-icon-button ml-1" aria-label="Quitar archivo"
+                    (click)="removeSelectedFile()">
+              <lucide-icon name="x" class="h-3 w-3"></lucide-icon>
+            </button>
+          </div>
+        }
         <p class="mt-1 text-right text-[10px] text-zinc-600">{{ draft().length }}/2000 · Enter envía, Shift+Enter salta de línea</p>
       </footer>
     } @else {

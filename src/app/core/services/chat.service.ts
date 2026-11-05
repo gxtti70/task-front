@@ -92,6 +92,34 @@ export class ChatService {
     });
   }
 
+  sendFile(channelId: string, file: File, body = ''): void {
+    if (!channelId || this.sendingMessage()) return;
+    this.sendingMessage.set(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    if (body.trim()) formData.append('body', body.trim());
+    this.http.post<ChatMessage>(`${this.url}/${channelId}/messages/file`, formData).subscribe({
+      next: message => {
+        this.sendingMessage.set(false);
+        if (this.activeChannelId() === channelId) this.mergeMessages([message]);
+      },
+      error: () => this.sendingMessage.set(false)
+    });
+  }
+
+  downloadFile(channelId: string, messageId: string): void {
+    window.location.href = `${this.url}/${channelId}/messages/${messageId}/file`;
+  }
+
+  deleteFile(channelId: string, messageId: string): void {
+    this.http.delete(`${this.url}/${channelId}/messages/${messageId}/file`).subscribe({
+      next: () => {
+        this.messages.update(list => list.filter(m => m.id !== messageId));
+      },
+      error: () => {}
+    });
+  }
+
   createChannel(request: ChannelRequest): Observable<Channel> {
     return this.http.post<Channel>(this.url, request).pipe(tap(channel => this.upsertChannel(channel)));
   }

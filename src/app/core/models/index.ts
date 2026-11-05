@@ -94,6 +94,11 @@ export interface ChatMessage {
   authorName: string;
   authorEmail: string;
   createdAt: string;
+  messageType?: 'TEXT' | 'FILE';
+  fileName?: string | null;
+  fileContentType?: string | null;
+  fileSizeBytes?: number | null;
+  downloadUrl?: string | null;
 }
 
 export interface Project {

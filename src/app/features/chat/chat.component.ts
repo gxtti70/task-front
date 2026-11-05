@@ -2,7 +2,7 @@ import { Component, DestroyRef, NgZone, OnInit, computed, effect, inject, signal
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
-import { Channel, Project, User } from '../../core/models';
+import { Channel, ChatMessage, Project, User } from '../../core/models';
 import { ChatService } from '../../core/services/chat.service';
 import { TypingIndicatorComponent } from './typing-indicator.component';
 import { AuthService } from '../../core/services/auth.service';
@@ -46,6 +46,7 @@ export class ChatComponent implements OnInit {
   readonly creating = signal(false);
   readonly draft = signal('');
   readonly sidebarOpen = signal(false);
+  readonly selectedFile = signal<File | null>(null);
 
   readonly filteredUsers = computed(() => {
     const query = this.dmSearch().trim().toLowerCase();
@@ -113,6 +114,58 @@ export class ChatComponent implements OnInit {
     const text = this.draft();
     this.chat.send(text);
     if (text.trim()) this.draft.set('');
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    this.selectedFile.set(file);
+    input.value = ''; // reset para poder seleccionar el mismo archivo de nuevo
+  }
+
+  removeSelectedFile(): void {
+    this.selectedFile.set(null);
+  }
+
+  getFileIcon(contentType: string | null | undefined): string {
+    if (!contentType) return 'paperclip';
+    if (contentType.startsWith('audio/')) return 'headphones';
+    if (contentType.startsWith('image/')) return 'image';
+    if (contentType.startsWith('video/')) return 'film';
+    if (contentType.includes('pdf')) return 'file-text';
+    if (contentType.includes('word') || contentType.includes('document')) return 'file-text';
+    if (contentType.includes('excel') || contentType.includes('spreadsheet')) return 'file';
+    if (contentType.includes('zip') || contentType.includes('compressed')) return 'file-zip';
+    return 'paperclip';
+  }
+
+  formatFileSize(bytes: number | null | undefined): string {
+    if (!bytes) return '';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  onSendFile(): void {
+    const file = this.selectedFile();
+    const channelId = this.chat.activeChannelId();
+    if (!file || !channelId) return;
+    this.chat.sendFile(channelId, file, this.draft());
+    this.draft.set('');
+    this.selectedFile.set(null);
+  }
+
+  onDownloadFile(message: ChatMessage): void {
+    if (message.downloadUrl) {
+      this.chat.downloadFile(this.chat.activeChannelId()!, message.id);
+    }
+  }
+
+  onDeleteFile(message: ChatMessage): void {
+    if (!confirm('¿Eliminar este archivo?')) return;
+    const channelId = this.chat.activeChannelId();
+    if (!channelId) return;
+    this.chat.deleteFile(channelId, message.id);
   }
 
   onTyping(): void {
