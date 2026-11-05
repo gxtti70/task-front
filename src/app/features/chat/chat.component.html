@@ -1,6 +1,6 @@
-<div class="flex gap-4 h-[calc(100dvh-12rem)] min-h-[30rem] md:h-[calc(100dvh-8rem)]">
+<div class="flex flex-col md:flex-row gap-4 h-[calc(100dvh-12rem)] min-h-[calc(100dvh-12rem)] relative">
   <!-- Columna de canales -->
-  <aside class="flex w-56 shrink-0 flex-col overflow-hidden rounded-2xl border border-zinc-900/70 bg-zinc-950/40" aria-label="Lista de canales">
+  <aside class="flex w-56 shrink-0 flex-col overflow-hidden rounded-2xl border border-zinc-900/70 bg-zinc-950/40 z-20 hidden md:flex" aria-label="Lista de canales">
     <header class="flex items-center justify-between border-b border-zinc-900/70 px-4 py-3">
       <span class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
         <lucide-icon name="message-square" class="h-4 w-4"></lucide-icon>
@@ -41,10 +41,54 @@
     </div>
   </aside>
 
+  <!-- Drawer móvil de canales -->
+  <div *ngIf="sidebarOpen()" class="fixed inset-y-0 left-0 w-56 z-50 flex flex-col overflow-hidden rounded-l-none border-r border-zinc-900/70 bg-zinc-950/40 shadow-xl md:hidden" aria-label="Lista de canales">
+    <header class="flex items-center justify-between border-b border-zinc-900/70 px-4 py-3">
+      <span class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+        <lucide-icon name="message-square" class="h-4 w-4"></lucide-icon>
+        Chat
+      </span>
+      <button type="button" class="premium-icon-button" aria-label="Cerrar" (click)="toggleSidebar()">
+        <lucide-icon name="x" class="h-4 w-4"></lucide-icon>
+      </button>
+    </header>
+    <div class="flex-1 space-y-1 overflow-y-auto px-2 py-2">
+      <h3 class="px-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Salas de proyecto</h3>
+      @for (channel of rooms(); track channel.id) {
+        <button type="button" (click)="chat.openChannel(channel.id)" [title]="channelLabel(channel)"
+                class="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors"
+                [ngClass]="channel.id === chat.activeChannelId()
+                  ? 'bg-zinc-900 text-white'
+                  : 'text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200'">
+          <lucide-icon name="hash" class="h-4 w-4 shrink-0"></lucide-icon>
+          <span class="truncate">{{ channelLabel(channel) }}</span>
+        </button>
+      } @empty {
+        <p class="px-2.5 py-1 text-[11px] text-zinc-600">Aún no perteneces a una sala.</p>
+      }
+      <h3 class="mt-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Mensajes directos</h3>
+      @for (channel of directs(); track channel.id) {
+        <button type="button" (click)="chat.openChannel(channel.id)" [title]="channelLabel(channel)"
+                class="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors"
+                [ngClass]="channel.id === chat.activeChannelId()
+                  ? 'bg-zinc-900 text-white'
+                  : 'text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200'">
+          <lucide-icon name="message-circle" class="h-4 w-4 shrink-0 text-sky-300"></lucide-icon>
+          <span class="truncate">{{ channelLabel(channel) }}</span>
+        </button>
+      } @empty {
+        <p class="px-2.5 py-1 text-[11px] text-zinc-600">Abre un DM desde el botón +.</p>
+      }
+    </div>
+  </div>
+
   <!-- Panel de conversación -->
   <section class="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-900/70 bg-zinc-950/40">
     @if (chat.activeChannel(); as channel) {
       <header class="flex items-center justify-between border-b border-zinc-900/70 px-4 py-3">
+        <button type="button" class="md:hidden mr-2" aria-label="Canales" (click)="toggleSidebar()">
+          <lucide-icon name="menu" class="h-5 w-5"></lucide-icon>
+        </button>
         <h2 class="flex items-center gap-2 truncate text-sm font-semibold text-zinc-100">
           @if (channel.projectId !== null) {
             <lucide-icon name="hash" class="h-4 w-4 text-zinc-500"></lucide-icon>
@@ -75,7 +119,7 @@
                 {{ initialsOf(message.authorName) }}
               </span>
             }
-            <div class="max-w-[75%]">
+            <div class="max-w-[85%] sm:max-w-[75%]">
               <p class="text-[10px] text-zinc-500" [ngClass]="message.authorId === currentUserId() ? 'text-right' : ''">
                 {{ message.authorName }} · {{ message.createdAt | date:'shortTime' }}
               </p>

@@ -44,6 +44,7 @@ export class ChatComponent implements OnInit {
   readonly dmSearch = signal('');
   readonly creating = signal(false);
   readonly draft = signal('');
+  readonly sidebarOpen = signal(false);
 
   readonly filteredUsers = computed(() => {
     const query = this.dmSearch().trim().toLowerCase();
@@ -126,6 +127,10 @@ export class ChatComponent implements OnInit {
 
   closeDialog(): void {
     this.dialogOpen.set(false);
+  }
+
+  toggleSidebar(): void {
+    this.sidebarOpen.update(v => !v);
   }
 
   submitRoom(): void {
