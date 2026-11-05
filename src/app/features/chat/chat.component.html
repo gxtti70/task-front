@@ -86,11 +86,20 @@
 
   <!-- Panel de conversación -->
   <section class="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-900/70 bg-zinc-950/40">
+    <!-- Header móvil: siempre visible para abrir el drawer de canales -->
+    <header class="md:hidden flex items-center justify-between border-b border-zinc-900/70 px-4 py-3 z-10 bg-zinc-950/40">
+      <button type="button" class="mr-2" aria-label="Canales" (click)="toggleSidebar()">
+        <lucide-icon name="menu" class="h-5 w-5"></lucide-icon>
+      </button>
+      <span class="text-xs font-semibold text-zinc-100">Chat</span>
+      <button type="button" class="ml-2 premium-icon-button" title="Nueva conversación" aria-label="Nueva conversación"
+              (click)="openDialog('room')">
+        <lucide-icon name="plus" class="h-4 w-4"></lucide-icon>
+      </button>
+    </header>
+
     @if (chat.activeChannel(); as channel) {
       <header class="flex items-center justify-between border-b border-zinc-900/70 px-4 py-3">
-        <button type="button" class="md:hidden mr-2" aria-label="Canales" (click)="toggleSidebar()">
-          <lucide-icon name="menu" class="h-5 w-5"></lucide-icon>
-        </button>
         <h2 class="flex items-center gap-2 truncate text-sm font-semibold text-zinc-100">
           @if (channel.projectId !== null) {
             <lucide-icon name="hash" class="h-4 w-4 text-zinc-500"></lucide-icon>
