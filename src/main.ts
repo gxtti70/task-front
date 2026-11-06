@@ -12,4 +12,14 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManage
 }
 
 bootstrapApplication(AppComponent, appConfig)
+  .then(appRef => {
+    // Suscribirse a push al iniciar la app (no solo al entrar al chat),
+    // para recibir notificaciones desde cualquier sección como WhatsApp.
+    const push = appRef.injector.get(PushNotificationService);
+    void push.subscribe().then(subscribed => {
+      if (subscribed) {
+        console.log('Notificaciones push activadas al iniciar la app');
+      }
+    });
+  })
   .catch((err) => console.error(err));

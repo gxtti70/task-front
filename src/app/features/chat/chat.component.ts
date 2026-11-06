@@ -76,10 +76,6 @@ export class ChatComponent implements OnInit {
     this.chat.fetchUnreadCounts();
     this.projectService.getProjects().subscribe({ next: list => this.projectList.set(list) });
     this.userDirectory.getActiveUsers().subscribe({ next: list => this.userList.set(list) });
-    // Suscribirse a push al entrar al chat (si el navegador lo soporta y hay permiso previo).
-    void this.push.subscribe().then(subscribed => {
-      if (subscribed) this.toast.success?.('Notificaciones push activadas');
-    });
     // Sondeo cada 4 s solo mientras la pestaña esté visible, fuera de la zona para no saturar el detector de cambios.
     this.zone.runOutsideAngular(() => {
       const poller = setInterval(() => {
