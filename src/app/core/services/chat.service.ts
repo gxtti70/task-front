@@ -1,8 +1,9 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal, effect } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { Channel, ChannelRequest, ChatMessage, DirectChannelRequest } from '../models';
 import { environment } from '../../../environments/environment';
+import { PushNotificationService } from './push-notification.service';
 
 const MESSAGE_PAGE_SIZE = 50;
 const POLL_INTERVAL_MS = 4000;
@@ -35,6 +36,20 @@ export class ChatService {
   readonly sendingMessage = signal(false);
   readonly typingUsers = signal<Map<string, string>>(new Map());
   readonly unreadCounts = signal<Map<string, number>>(new Map());
+
+  private push = inject(PushNotificationService);
+
+  constructor() {
+    // Cuando el usuario responde desde una notificación push, enviar el mensaje al canal correspondiente.
+    this.push.onPushReply.subscribe(({ channelId, text }) => {
+      this.sendTo(channelId, text);
+    });
+
+    // Suscribirse a push automáticamente cuando el servicio se inicializa (si hay permiso previo).
+    void this.push.subscribe().then(subscribed => {
+      if (subscribed) console.log('Suscripción a push activada');
+    });
+  }
 
   loadChannels(): Observable<Channel[]> {
     return this.http.get<Channel[]>(this.url).pipe(tap(list => this.channels.set(list)));
@@ -81,6 +96,12 @@ export class ChatService {
 
   send(body: string): void {
     const channelId = this.activeChannelId();
+    if (!channelId) return;
+    this.sendTo(channelId, body);
+  }
+
+  /** Envía un mensaje a un canal específico (usado para respuestas desde notificaciones push). */
+  sendTo(channelId: string, body: string): void {
     const text = body.trim();
     if (!channelId || !text || this.sendingMessage()) return;
     this.sendingMessage.set(true);
@@ -88,7 +109,6 @@ export class ChatService {
       next: message => {
         this.sendingMessage.set(false);
         if (this.activeChannelId() === channelId) this.mergeMessages([message]);
-        // El remitente no ve su propio mensaje como no leído.
         this.markAsRead(channelId);
       },
       error: () => this.sendingMessage.set(false)

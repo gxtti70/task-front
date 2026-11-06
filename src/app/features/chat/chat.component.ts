@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { Channel, ChatMessage, Project, User } from '../../core/models';
 import { ChatService } from '../../core/services/chat.service';
+import { PushNotificationService } from '../../core/services/push-notification.service';
 import { TypingIndicatorComponent } from './typing-indicator.component';
 import { AuthService } from '../../core/services/auth.service';
 import { ProjectService } from '../../core/services/project.service';
@@ -20,6 +21,7 @@ import { SkeletonComponent } from '../../shared/ui/skeleton.component';
 })
 export class ChatComponent implements OnInit {
   readonly chat = inject(ChatService);
+  readonly push = inject(PushNotificationService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly zone = inject(NgZone);
@@ -74,6 +76,10 @@ export class ChatComponent implements OnInit {
     this.chat.fetchUnreadCounts();
     this.projectService.getProjects().subscribe({ next: list => this.projectList.set(list) });
     this.userDirectory.getActiveUsers().subscribe({ next: list => this.userList.set(list) });
+    // Suscribirse a push al entrar al chat (si el navegador lo soporta y hay permiso previo).
+    void this.push.subscribe().then(subscribed => {
+      if (subscribed) this.toast.success?.('Notificaciones push activadas');
+    });
     // Sondeo cada 4 s solo mientras la pestaña esté visible, fuera de la zona para no saturar el detector de cambios.
     this.zone.runOutsideAngular(() => {
       const poller = setInterval(() => {
@@ -86,6 +92,17 @@ export class ChatComponent implements OnInit {
       }, this.chat.pollIntervalMs);
       this.destroyRef.onDestroy(() => clearInterval(poller));
     });
+  }
+
+  async subscribePush(): Promise<void> {
+    if (this.push.isSubscribed()) {
+      await this.push.unsubscribe();
+      this.toast.info?.('Notificaciones push desactivadas');
+    } else {
+      const ok = await this.push.subscribe();
+      if (ok) this.toast.success?.('Notificaciones push activadas');
+      else this.toast.error?.('No se pudo activar las notificaciones push');
+    }
   }
 
   channelLabel(channel: Channel | null): string {

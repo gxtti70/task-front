@@ -10,6 +10,13 @@
               (click)="openDialog('room')">
         <lucide-icon name="plus" class="h-4 w-4"></lucide-icon>
       </button>
+      <button type="button" class="premium-icon-button" (click)="subscribePush()"
+                [title]="push.isSubscribed() ? 'Desactivar notificaciones push' : 'Activar notificaciones push'"
+                aria-label="Notificaciones push"
+                [class.text-zinc-400]="!push.isSubscribed()"
+                [class.text-white]="push.isSubscribed()">
+        <lucide-icon name="bell" class="h-4 w-4"></lucide-icon>
+      </button>
     </header>
     <div class="flex-1 space-y-1 overflow-y-auto px-2 py-2">
       <h3 class="px-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Salas de proyecto</h3>
