@@ -7,6 +7,7 @@ import { roleBadgeClasses } from '../../core/utils/role-style';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { ProjectService } from '../../core/services/project.service';
 import { ChatService } from '../../core/services/chat.service';
+import { ThemeService } from '../../core/services/theme.service';
 import { ToastService } from '../../core/services/toast.service';
 
 @Component({
@@ -20,7 +21,11 @@ export class SidebarComponent implements OnInit {
   public subscriptionService = inject(SubscriptionService);
   public projectService = inject(ProjectService);
   public chatService = inject(ChatService);
+  public theme = inject(ThemeService);
   private toast = inject(ToastService);
+
+  /** Valor interno para comparar el tema oscuro sin usar string literal en el template. */
+  protected readonly darkThemeName = 'dark';
   isCollapsed = signal(false);
 
   /** Drawer state on small screens, controlled by the dashboard shell. */
@@ -79,5 +84,26 @@ export class SidebarComponent implements OnInit {
   @HostListener('window:keydown.escape')
   onEscape(): void {
     this.closeMobile();
+  }
+
+  /** Icono de lucide para el tema actual. */
+  themeIcon(): string {
+    const t = this.theme.theme();
+    if (t === 'dark') return 'moon';
+    if (t === 'light') return 'sun';
+    return 'monitor';
+  }
+
+  /** Etiqueta legible del tema actual. */
+  themeLabel(): string {
+    const t = this.theme.theme();
+    if (t === 'dark') return 'Oscuro';
+    if (t === 'light') return 'Claro';
+    return 'Sistema';
+  }
+
+  /** Cambia al siguiente tema: claro → oscuro → sistema → claro. */
+  toggleTheme(): void {
+    this.theme.toggleLightDark();
   }
 }

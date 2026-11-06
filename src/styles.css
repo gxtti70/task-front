@@ -400,3 +400,66 @@ body {
     clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
   }
 }
+
+/* ==========================================================================
+   Tema claro / oscuro — variables CSS
+   ========================================================================== */
+:root {
+  --tm-bg: #fafafa;
+  --tm-bg-secondary: #f3f4f6;
+  --tm-text: #0f172a;
+  --tm-text-muted: #64748b;
+  --tm-border: #e2e8f0;
+  --tm-card: #ffffff;
+  --tm-input-bg: #ffffff;
+  --tm-input-border: #cbd5e1;
+  --tm-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.dark {
+  --tm-bg: #09090b;
+  --tm-bg-secondary: #18181b;
+  --tm-text: #fafafa;
+  --tm-text-muted: #a1a1aa;
+  --tm-border: #27272a;
+  --tm-card: #18181b;
+  --tm-input-bg: #18181b;
+  --tm-input-border: #3f3f46;
+  --tm-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+body {
+  background-color: var(--tm-bg);
+  color: var(--tm-text);
+  transition: background-color 300ms ease, color 300ms ease;
+}
+
+/* Ajustes de componentes principales para modo claro/oscuro */
+.sidebar-dark {
+  background-color: #0f172a;
+  border-color: var(--tm-border);
+}
+.dark .sidebar-dark {
+  background-color: #09090b;
+  border-color: var(--tm-border);
+}
+
+.tm-card {
+  background-color: var(--tm-card);
+  border-color: var(--tm-border);
+  color: var(--tm-text);
+}
+
+.tm-input {
+  background-color: var(--tm-input-bg);
+  border-color: var(--tm-input-border);
+  color: var(--tm-text);
+}
+
+.tm-text-muted {
+  color: var(--tm-text-muted);
+}
+
+.tm-shadow {
+  box-shadow: var(--tm-shadow);
+}

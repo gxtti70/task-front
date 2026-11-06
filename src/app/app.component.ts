@@ -3,6 +3,7 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { filter } from 'rxjs';
 import { ToastViewportComponent } from './shared/toast-viewport.component';
+import { ThemeService } from './core/services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -14,6 +15,7 @@ import { ToastViewportComponent } from './shared/toast-viewport.component';
 export class AppComponent implements OnInit {
   private router = inject(Router);
   private title = inject(Title);
+  readonly theme = inject(ThemeService);
   isOnline = navigator.onLine;
 
   ngOnInit(): void {
