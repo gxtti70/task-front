@@ -1,4 +1,4 @@
-<div class="flex flex-col md:flex-row gap-4 h-[calc(100dvh-12rem)] min-h-[calc(100dvh-12rem)] relative">
+<div class="chat-layout relative flex h-[calc(100dvh-12rem)] min-h-[calc(100dvh-12rem)] flex-col gap-4 md:flex-row">
   <!-- Columna de canales -->
   <aside class="flex w-56 shrink-0 flex-col overflow-hidden rounded-2xl border border-zinc-900/70 bg-zinc-950/40 z-20 hidden md:flex" aria-label="Lista de canales">
     <header class="flex items-center justify-between border-b border-zinc-900/70 px-4 py-3">
@@ -61,7 +61,7 @@
   <!-- Drawer móvil de canales (backdrop) -->
   <div *ngIf="sidebarOpen()" class="fixed inset-0 z-40 bg-zinc-950/60 backdrop-blur-sm md:hidden" (click)="toggleSidebar()"></div>
 
-  <div *ngIf="sidebarOpen()" class="fixed inset-y-0 left-0 w-56 z-50 flex flex-col overflow-hidden rounded-l-none border-r border-zinc-900/70 bg-zinc-950/40 shadow-xl md:hidden transition-transform duration-300 ease-in-out" aria-label="Lista de canales">
+  <div *ngIf="sidebarOpen()" class="fixed bottom-0 left-0 top-14 z-50 flex w-56 flex-col overflow-hidden rounded-l-none border-r border-zinc-900/70 bg-zinc-950/40 shadow-xl transition-transform duration-300 ease-in-out md:hidden" aria-label="Lista de canales">
     <header class="flex items-center justify-between border-b border-zinc-900/70 px-4 py-3">
       <span class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
         <lucide-icon name="message-square" class="h-4 w-4"></lucide-icon>
@@ -142,7 +142,7 @@
 
       <app-typing-indicator />
 
-      <div #messagesScroller (scroll)="onScroll($event)" class="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4" aria-label="Mensajes">
+      <div #messagesScroller (scroll)="onScroll($event)" class="chat-messages-list min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4" aria-label="Mensajes">
         @if (chat.loadingMessages() && !chat.messages().length) {
           @for (line of [1, 2, 3]; track line) {
             <app-skeleton skeletonClass="h-10 w-3/4"></app-skeleton>
@@ -151,22 +151,22 @@
           <p class="pt-10 text-center text-xs text-zinc-600">Aún no hay mensajes. Estrena la conversación…</p>
         }
         @for (message of chat.messages(); track message.id) {
-          <article class="flex gap-3"
+          <article class="chat-message-row flex items-end gap-2"
                    [ngClass]="message.authorId === currentUserId() ? 'justify-end' : ''">
             @if (message.authorId !== currentUserId()) {
               <span aria-hidden="true"
-                    class="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-[10px] font-semibold text-zinc-200">
+                    class="chat-message-avatar mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold">
                 {{ initialsOf(message.authorName) }}
               </span>
             }
-            <div class="max-w-[85%] sm:max-w-[75%]">
-              <p class="text-[10px] text-zinc-500" [ngClass]="message.authorId === currentUserId() ? 'text-right' : ''">
+            <div class="chat-message-content min-w-0 max-w-[86%] sm:max-w-[75%]">
+              <p class="chat-message-meta text-[10px]" [ngClass]="message.authorId === currentUserId() ? 'text-right' : ''">
                 {{ message.authorName }} · {{ message.createdAt | date:'shortTime' }}
               </p>
-              <p class="mt-0.5 whitespace-pre-line rounded-xl px-3 py-2 text-sm leading-relaxed"
+              <p class="chat-message-bubble mt-1 whitespace-pre-line rounded-2xl border px-3.5 py-2.5 text-sm leading-relaxed"
                  [ngClass]="message.authorId === currentUserId()
-                   ? 'bg-sky-950/60 text-zinc-100'
-                   : 'bg-zinc-900/80 text-zinc-200'">
+                   ? 'is-mine rounded-br-md'
+                   : 'is-other rounded-bl-md'">
                 {{ message.body }}
               </p>
               @if (message.messageType === 'FILE') {

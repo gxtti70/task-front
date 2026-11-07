@@ -1,6 +1,9 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter } from 'rxjs';
 import { SidebarComponent } from './sidebar.component';
 import { TopbarComponent } from './topbar.component';
 import { AnnouncementService } from '../../core/services/announcement.service';
@@ -23,7 +26,7 @@ import { catchError } from 'rxjs/operators';
       <app-sidebar [mobileOpen]="mobileNavOpen()" (closed)="mobileNavOpen.set(false)"></app-sidebar>
       <div class="flex-1 flex flex-col min-w-0">
         <app-topbar (menuToggle)="mobileNavOpen.update(v => !v)"></app-topbar>
-        <main class="min-w-0 flex-1 overflow-y-auto overflow-x-hidden bg-background p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:p-6 [class.bg-white]:bg-zinc-50">
+        <main [class.chat-main]="isChatRoute()" class="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden bg-background p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:p-6 [class.bg-white]:bg-zinc-50">
           <router-outlet></router-outlet>
         </main>
       </div>
@@ -57,10 +60,20 @@ import { catchError } from 'rxjs/operators';
 export class DashboardComponent implements OnInit {
   private announcements = inject(AnnouncementService);
   private subscriptions = inject(SubscriptionService);
+  private readonly router = inject(Router);
   readonly auth = inject(AuthService);
   readonly welcome = signal<Announcement | null>(null);
   readonly rememberWelcome = signal(true);
   readonly mobileNavOpen = signal(false);
+  readonly isChatRoute = signal(false);
+
+  constructor() {
+    this.isChatRoute.set(this.router.url.startsWith('/dashboard/chat'));
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      takeUntilDestroyed()
+    ).subscribe(event => this.isChatRoute.set(event.urlAfterRedirects.startsWith('/dashboard/chat')));
+  }
 
   ngOnInit(): void {
     forkJoin({

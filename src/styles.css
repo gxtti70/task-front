@@ -706,3 +706,41 @@ html.blue .message-notification-open { color: #7dd3fc; }
   from { opacity: 0; transform: translateY(.6rem) scale(.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* Burbujas de conversación y layout móvil bloqueado al área visible. */
+.chat-message-meta { margin: 0 .35rem; color: #8f9ab0; }
+.chat-message-bubble { overflow-wrap: anywhere; box-shadow: 0 2px 6px rgb(0 0 0 / 10%); }
+.chat-message-bubble.is-mine { border-color: #4f46e5; background: #4f46e5; color: #fff; }
+.chat-message-bubble.is-other { border-color: #343b4a; background: #202635; color: #e6eaf2; }
+.chat-message-avatar { border: 1px solid #3b4352; background: #272f3e; color: #d8dfed; }
+html.light .chat-message-meta { color: #69718b; }
+html.light .chat-message-bubble.is-mine { border-color: #4f46e5; background: #4f46e5; color: #fff; }
+html.light .chat-message-bubble.is-other { border-color: #d8dce8; background: #fff; color: #232a45; box-shadow: 0 2px 6px rgb(20 24 43 / 7%); }
+html.light .chat-message-avatar { border-color: #d8dce8; background: #e2e6f0; color: #3f4660; }
+html.blue .chat-message-bubble.is-mine { border-color: #38bdf8; background: #38bdf8; color: #04122b; }
+html.blue .chat-message-bubble.is-other { border-color: #2a4274; background: #16264a; color: #eaf1ff; }
+html.blue .chat-message-avatar { border-color: #2a4274; background: #16264a; color: #bccbea; }
+
+@media (max-width: 767px) {
+  app-dashboard main.chat-main {
+    overflow: hidden !important;
+    padding: 0 !important;
+    overscroll-behavior: none;
+  }
+
+  app-chat { display: block; height: 100%; min-height: 0; }
+  .chat-layout { height: 100% !important; min-height: 0 !important; gap: 0 !important; }
+  .chat-layout > section {
+    min-height: 0;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 0;
+  }
+  .chat-messages-list {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+  }
+  .chat-layout > section > footer { padding-bottom: max(.75rem, env(safe-area-inset-bottom)); }
+}
