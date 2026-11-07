@@ -210,7 +210,7 @@
           </button>
           <input type="file" #fileInput class="absolute opacity-0 w-0 h-0 pointer-events-none" (change)="onFileSelected($event)"
                  accept="audio/*,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/*">
-          <textarea name="chatDraft" rows="1" maxlength="2000" placeholder="Escribe un mensaje…"
+          <textarea #composer name="chatDraft" rows="1" maxlength="2000" placeholder="Escribe un mensaje…"
                     aria-label="Escribe un mensaje" class="premium-control min-h-[2.75rem] flex-1 resize-none"
                     [ngModel]="draft()" (ngModelChange)="draft.set($event)"
                     (keydown)="onComposerKeydown($event)"

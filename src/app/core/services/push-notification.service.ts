@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, NgZone, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -9,9 +9,19 @@ export interface PushSubscriptionDto {
   authKey: string;
 }
 
+export interface IncomingPushMessage {
+  channelId: string;
+  messageId: string;
+  senderName: string;
+  title: string;
+  body: string;
+  timestamp: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PushNotificationService {
   private http = inject(HttpClient);
+  private zone = inject(NgZone);
   private readonly url = `${environment.apiUrl}/push`;
   private registration: ServiceWorkerRegistration | null = null;
 
@@ -19,6 +29,7 @@ export class PushNotificationService {
   readonly permission = signal<NotificationPermission>('default');
   readonly isSubscribed = signal(false);
   readonly vapidPublicKey = signal<string | null>(null);
+  readonly incomingMessages = signal<IncomingPushMessage[]>([]);
 
   constructor() {
     if (this.isSupported()) {
@@ -34,10 +45,16 @@ export class PushNotificationService {
       this.registration = await navigator.serviceWorker.register('/push-sw.js', { scope: '/' });
 
       navigator.serviceWorker.addEventListener('message', (event: MessageEvent) => {
-        const data = event.data as { type: string; channelId?: string; text?: string };
-        if (data.type === 'PUSH_REPLY' && data.channelId && data.text) {
-          this.onPushReply.emit({ channelId: data.channelId, text: data.text });
-        }
+        const data = event.data as Partial<IncomingPushMessage> & { type?: string };
+        if (data.type !== 'PUSH_MESSAGE' || !data.channelId) return;
+        this.zone.run(() => this.showIncomingMessage({
+          channelId: data.channelId!,
+          messageId: data.messageId ?? '',
+          senderName: data.senderName || 'Nuevo mensaje',
+          title: data.title || 'Nuevo mensaje',
+          body: data.body || 'Tienes un nuevo mensaje',
+          timestamp: data.timestamp ?? Date.now()
+        }));
       });
 
       const existing = await this.registration.pushManager.getSubscription();
@@ -52,12 +69,16 @@ export class PushNotificationService {
     }
   }
 
-  /** Observable-like emitter para respuestas desde notificaciones push. */
-  readonly onPushReply = new (class {
-    private callbacks: Array<(data: { channelId: string; text: string }) => void> = [];
-    subscribe(cb: (data: { channelId: string; text: string }) => void) { this.callbacks.push(cb); }
-    emit(data: { channelId: string; text: string }) { this.callbacks.forEach(cb => cb(data)); }
-  })();
+  dismissMessage(messageId: string): void {
+    this.incomingMessages.update(items => items.filter(item => item.messageId !== messageId));
+  }
+
+  showIncomingMessage(message: IncomingPushMessage): void {
+    this.incomingMessages.update(items => [
+      message,
+      ...items.filter(item => item.messageId !== message.messageId)
+    ].slice(0, 3));
+  }
 
   async subscribe(): Promise<boolean> {
     if (!this.isSupported() || !this.registration || !this.vapidPublicKey()) return false;

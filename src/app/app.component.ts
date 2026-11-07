@@ -4,12 +4,13 @@ import { Title } from '@angular/platform-browser';
 import { filter } from 'rxjs';
 import { ToastViewportComponent } from './shared/toast-viewport.component';
 import { ThemeService } from './core/services/theme.service';
+import { MessageNotificationViewportComponent } from './shared/message-notification-viewport.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, ToastViewportComponent],
-  template: `<router-outlet></router-outlet><app-toast-viewport></app-toast-viewport>
+  imports: [RouterOutlet, ToastViewportComponent, MessageNotificationViewportComponent],
+  template: `<router-outlet></router-outlet><app-toast-viewport></app-toast-viewport><app-message-notification-viewport></app-message-notification-viewport>
     @if (!isOnline) { <div class="fixed bottom-4 left-1/2 z-[110] -translate-x-1/2 rounded-full border border-amber-800/70 bg-zinc-950 px-4 py-2 text-xs text-amber-200 shadow-xl" role="status">Sin conexión a Internet</div> }`
 })
 export class AppComponent implements OnInit {

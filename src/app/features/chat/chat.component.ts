@@ -1,6 +1,8 @@
 import { Component, DestroyRef, NgZone, OnInit, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LucideAngularModule } from 'lucide-angular';
 import { Channel, ChatMessage, Project, User } from '../../core/models';
 import { ChatService } from '../../core/services/chat.service';
@@ -21,6 +23,7 @@ import { SkeletonComponent } from '../../shared/ui/skeleton.component';
 })
 export class ChatComponent implements OnInit {
   readonly chat = inject(ChatService);
+  private readonly route = inject(ActivatedRoute);
   readonly push = inject(PushNotificationService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
@@ -58,6 +61,7 @@ export class ChatComponent implements OnInit {
   });
 
   private readonly scroller = viewChild<HTMLElement>('messagesScroller');
+  private readonly composer = viewChild<HTMLTextAreaElement>('composer');
   private lastScrolledMessageId = '';
   private typingTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -73,7 +77,23 @@ export class ChatComponent implements OnInit {
 
   ngOnInit(): void {
     this.chat.pollWhenVisible();
-    this.chat.fetchUnreadCounts();
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      const channelId = params.get('channelId');
+      const focusReply = params.get('reply') === 'true';
+      if (!channelId) return;
+      if (this.chat.activeChannelId() === channelId) {
+        if (focusReply) setTimeout(() => this.composer()?.focus());
+        return;
+      }
+      this.chat.loadChannels().subscribe({
+        next: channels => {
+          if (!channels.some(channel => channel.id === channelId)) return;
+          this.chat.openChannel(channelId);
+          this.chat.markAsRead(channelId);
+          if (focusReply) setTimeout(() => this.composer()?.focus());
+        }
+      });
+    });
     this.projectService.getProjects().subscribe({ next: list => this.projectList.set(list) });
     this.userDirectory.getActiveUsers().subscribe({ next: list => this.userList.set(list) });
     // Sondeo cada 4 s solo mientras la pestaña esté visible, fuera de la zona para no saturar el detector de cambios.
@@ -82,7 +102,6 @@ export class ChatComponent implements OnInit {
         if (document.visibilityState === 'visible') {
           this.zone.run(() => {
             this.chat.pollWhenVisible();
-            this.chat.fetchUnreadCounts();
           });
         }
       }, this.chat.pollIntervalMs);

@@ -1,9 +1,8 @@
 // Service worker para notificaciones push del chat.
 // Se registra en el scope raíz para recibir push incluso con la pestaña cerrada.
-// Versión 2: payload JSON plano (sin cifrado), evento de respuesta desde notificación.
+// Versión 3: los mensajes se envían a ventanas abiertas y se muestran como push al quedar en segundo plano.
 
-const SW_VERSION = 'v2';
-const CACHE_NAME = `push-sw-${SW_VERSION}`;
+const SW_VERSION = 'v3';
 
 self.addEventListener('install', event => {
   console.log(`[Push SW ${SW_VERSION}] install`);
@@ -26,27 +25,42 @@ self.addEventListener('push', event => {
     data = {};
   }
 
+  const notificationData = {
+    channelId: data.channelId || '',
+    messageId: data.messageId || '',
+    senderName: data.senderName || '',
+    timestamp: data.timestamp || Date.now()
+  };
+
   const options = {
     body: data.body || 'Tienes un nuevo mensaje',
     icon: '/icon-192.png',
     badge: '/favicon-32.png',
     tag: 'chat-push',
     renotify: true,
-    data: {
-      channelId: data.channelId || '',
-      messageId: data.messageId || '',
-      senderName: data.senderName || '',
-      timestamp: data.timestamp || 0
-    },
+    data: notificationData,
     actions: [
       { action: 'reply', title: 'Responder' },
       { action: 'open', title: 'Abrir chat' }
     ]
   };
 
-  console.log('[Push SW] showing notification:', data.title || 'Nuevo mensaje');
+  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+    const message = {
+      type: 'PUSH_MESSAGE',
+      ...notificationData,
+      title: data.title || 'Nuevo mensaje',
+      body: data.body || 'Tienes un nuevo mensaje'
+    };
+    clients.forEach(client => client.postMessage(message));
 
-  event.waitUntil(self.registration.showNotification(data.title || 'Nuevo mensaje', options));
+    // Con la app visible mostramos una tarjeta propia que permite responder.
+    // La notificación del sistema se reserva para cuando no hay una ventana visible.
+    const hasVisibleClient = clients.some(client => client.visibilityState === 'visible');
+    if (!hasVisibleClient) {
+      return self.registration.showNotification(data.title || 'Nuevo mensaje', options);
+    }
+  }));
 });
 
 self.addEventListener('notificationclick', event => {
@@ -55,46 +69,16 @@ self.addEventListener('notificationclick', event => {
   event.notification.close();
 
   const { channelId } = event.notification.data || {};
-  const action = event.action;
-  const replyText = event.replyText || '';
+  const replyQuery = event.action === 'reply' ? '&reply=true' : '';
+  const chatUrl = `/dashboard/chat?channelId=${encodeURIComponent(channelId || '')}${replyQuery}`;
 
-  const handleClients = (fn) => {
-    event.waitUntil(
-      self.clients.matchAll({ includeUncontrolled: true }).then(clients => {
-        clients.forEach(fn);
-      })
-    );
-  };
-
-  if (action === 'reply' && replyText) {
-    // El usuario respondió desde la notificación: reenviar el texto al cliente de la app
-    handleClients(client => {
-      client.postMessage({
-        type: 'PUSH_REPLY',
-        channelId: channelId || '',
-        text: replyText
-      });
-    });
-  } else {
-    // Abrir/enfocar el chat
-    handleClients(client => {
-      if (client.url.includes('/dashboard/chat')) {
-        client.focus();
-        client.postMessage({
-          type: 'PUSH_OPEN_CHANNEL',
-          channelId: channelId || ''
-        });
-      }
-    }).then(() => {
-      // Si no hay cliente de chat abierto, abrir una nueva ventana
-      event.waitUntil(
-        self.clients.matchAll({ includeUncontrolled: true }).then(clients => {
-          const hasChat = clients.some(c => c.url.includes('/dashboard/chat'));
-          if (!hasChat) {
-            self.clients.openWindow('/dashboard/chat');
-          }
-        })
-      );
-    });
-  }
+  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async clients => {
+    const client = clients[0];
+    if (client) {
+      await client.navigate(chatUrl);
+      await client.focus();
+      return;
+    }
+    await self.clients.openWindow(chatUrl);
+  }));
 });

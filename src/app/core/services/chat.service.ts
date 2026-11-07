@@ -1,9 +1,8 @@
 import { Injectable, computed, inject, signal, effect } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, finalize, tap } from 'rxjs';
 import { Channel, ChannelRequest, ChatMessage, DirectChannelRequest } from '../models';
 import { environment } from '../../../environments/environment';
-import { PushNotificationService } from './push-notification.service';
 
 const MESSAGE_PAGE_SIZE = 50;
 const POLL_INTERVAL_MS = 4000;
@@ -36,20 +35,6 @@ export class ChatService {
   readonly sendingMessage = signal(false);
   readonly typingUsers = signal<Map<string, string>>(new Map());
   readonly unreadCounts = signal<Map<string, number>>(new Map());
-
-  private push = inject(PushNotificationService);
-
-  constructor() {
-    // Cuando el usuario responde desde una notificación push, enviar el mensaje al canal correspondiente.
-    this.push.onPushReply.subscribe(({ channelId, text }) => {
-      this.sendTo(channelId, text);
-    });
-
-    // Suscribirse a push automáticamente cuando el servicio se inicializa (si hay permiso previo).
-    void this.push.subscribe().then(subscribed => {
-      if (subscribed) console.log('Suscripción a push activada');
-    });
-  }
 
   loadChannels(): Observable<Channel[]> {
     return this.http.get<Channel[]>(this.url).pipe(tap(list => this.channels.set(list)));
@@ -97,22 +82,21 @@ export class ChatService {
   send(body: string): void {
     const channelId = this.activeChannelId();
     if (!channelId) return;
-    this.sendTo(channelId, body);
+    this.sendTo(channelId, body)?.subscribe({ error: () => {} });
   }
 
-  /** Envía un mensaje a un canal específico (usado para respuestas desde notificaciones push). */
-  sendTo(channelId: string, body: string): void {
+  /** Envía un mensaje a un canal específico, también desde la respuesta rápida global. */
+  sendTo(channelId: string, body: string): Observable<ChatMessage> | null {
     const text = body.trim();
-    if (!channelId || !text || this.sendingMessage()) return;
+    if (!channelId || !text || this.sendingMessage()) return null;
     this.sendingMessage.set(true);
-    this.http.post<ChatMessage>(`${this.url}/${channelId}/messages`, { body: text }).subscribe({
-      next: message => {
-        this.sendingMessage.set(false);
+    return this.http.post<ChatMessage>(`${this.url}/${channelId}/messages`, { body: text }).pipe(
+      tap({ next: message => {
         if (this.activeChannelId() === channelId) this.mergeMessages([message]);
         this.markAsRead(channelId);
-      },
-      error: () => this.sendingMessage.set(false)
-    });
+      }}),
+      finalize(() => this.sendingMessage.set(false))
+    );
   }
 
   sendFile(channelId: string, file: File, body = ''): void {
@@ -156,6 +140,18 @@ export class ChatService {
       },
       error: () => {}
     });
+  }
+
+  refreshUnreadCounts(): Observable<Record<string, number>> {
+    return this.http.get<Record<string, number>>(`${this.url}/unread-counts`).pipe(tap(counts => {
+      const map = new Map<string, number>();
+      for (const [channelId, count] of Object.entries(counts)) map.set(channelId, count);
+      this.unreadCounts.set(map);
+    }));
+  }
+
+  getLatestMessage(channelId: string): Observable<ChatMessage[]> {
+    return this.http.get<ChatMessage[]>(`${this.url}/${channelId}/messages`, { params: { limit: 1 } });
   }
 
   markAsRead(channelId: string): void {
