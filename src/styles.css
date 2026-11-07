@@ -498,6 +498,10 @@ html.light .bg-zinc-950\/50 { background-color: rgba(255, 255, 255, 0.5) !import
 html.light .bg-zinc-900\/60 { background-color: rgba(243, 244, 246, 0.6) !important; }
 html.light .bg-zinc-900\/40 { background-color: rgba(243, 244, 246, 0.4) !important; }
 html.light .bg-zinc-900\/50 { background-color: rgba(243, 244, 246, 0.5) !important; }
+html.light .bg-zinc-950\/40, html.light .bg-zinc-950\/50 { background-color: #ffffff !important; }
+html.light .bg-zinc-900\/40, html.light .bg-zinc-900\/50, html.light .bg-zinc-900\/60 { background-color: #f2f2f7 !important; }
+html.light .bg-zinc-900\/80 { background-color: #ffffff !important; }
+html.light .bg-background { background-color: #f2f2f7 !important; }
 html.light .bg-black\/20 { background-color: rgba(255, 255, 255, 0.2) !important; }
 html.light .bg-white\/\[0\.08\] { background-color: rgba(0, 0, 0, 0.08) !important; }
 html.light .bg-amber-950\/40 { background-color: rgba(247, 199, 89, 0.4) !important; }
@@ -517,11 +521,13 @@ html.light .text-zinc-500 { color: #64748b !important; }
 html.light .text-zinc-600 { color: #475569 !important; }
 html.light .text-zinc-700 { color: #1e293b !important; }
 html.light .text-white { color: #1c1c1e !important; }
+html.light .text-zinc-600 { color: #636366 !important; }
 
 html.light .border-zinc-800 { border-color: #e2e8f0 !important; }
 html.light .border-zinc-900 { border-color: #cbd5e1 !important; }
 html.light .border-zinc-950 { border-color: #94a3b8 !important; }
 html.light .border-zinc-700 { border-color: #94a3b8 !important; }
+html.light .border-white\/10, html.light .border-white\/\[0\.07\] { border-color: #d1d1d6 !important; }
 html.light .border-white\/\[0\.07\] { border-color: rgba(0, 0, 0, 0.07) !important; }
 html.light .border-zinc-800\/70 { border-color: rgba(226, 232, 240, 0.7) !important; }
 html.light .border-zinc-800\/60 { border-color: rgba(226, 232, 240, 0.6) !important; }
@@ -569,6 +575,7 @@ html.light .premium-control {
   border-color: #d1d1d6;
   color: #1c1c1e;
 }
+html.light .premium-control option { background: #ffffff; color: #1c1c1e; }
 html.light .premium-control::placeholder { color: #8e8e93; }
 html.light input, html.light textarea, html.light select { color-scheme: light; }
 html.light *::-webkit-scrollbar-track { background: #f2f2f7 !important; }
