@@ -405,15 +405,16 @@ body {
    Tema claro / oscuro — variables CSS
    ========================================================================== */
 :root {
-  --tm-bg: #fafafa;
-  --tm-bg-secondary: #f3f4f6;
-  --tm-text: #0f172a;
-  --tm-text-muted: #64748b;
-  --tm-border: #e2e8f0;
-  --tm-card: #ffffff;
-  --tm-input-bg: #ffffff;
-  --tm-input-border: #cbd5e1;
-  --tm-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --tm-bg: #F6F7FB;
+  --tm-bg-secondary: #EEF0F6;
+  --tm-text: #14182B;
+  --tm-text-muted: #5B6380;
+  --tm-border: #D8DCE8;
+  --tm-card: #FFFFFF;
+  --tm-input-bg: #EEF0F6;
+  --tm-input-border: #B8BFD3;
+  --tm-accent: #4F46E5;
+  --tm-shadow: 0 1px 2px rgba(20, 24, 43, 0.06), 0 2px 8px rgba(20, 24, 43, 0.04);
 }
 
 .dark {
@@ -425,29 +426,32 @@ body {
   --tm-card: #18181b;
   --tm-input-bg: #18181b;
   --tm-input-border: #3f3f46;
+  --tm-accent: #818cf8;
   --tm-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 html.blue {
-  --tm-bg: #0b1730;
-  --tm-bg-secondary: #102344;
-  --tm-text: #e8f1ff;
-  --tm-text-muted: #9db5d8;
-  --tm-border: #25436d;
-  --tm-card: #102344;
-  --tm-input-bg: #0e1e3a;
-  --tm-input-border: #315581;
+  --tm-bg: #0A1226;
+  --tm-bg-secondary: #16264A;
+  --tm-text: #EAF1FF;
+  --tm-text-muted: #8DA2CC;
+  --tm-border: #2A4274;
+  --tm-card: #101B36;
+  --tm-input-bg: #16264A;
+  --tm-input-border: #3A5A96;
+  --tm-accent: #38BDF8;
   --tm-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
-html.blue .bg-zinc-950 { background-color: #0b1730 !important; }
-html.blue .bg-zinc-900 { background-color: #102344 !important; }
-html.blue .bg-zinc-800 { background-color: #183257 !important; }
-html.blue .bg-zinc-700 { background-color: #25436d !important; }
-html.blue .text-zinc-100 { color: #e8f1ff !important; }
-html.blue .text-zinc-200, html.blue .text-zinc-300 { color: #c8daf5 !important; }
-html.blue .text-zinc-400, html.blue .text-zinc-500 { color: #9db5d8 !important; }
-html.blue .border-zinc-800, html.blue .border-zinc-900 { border-color: #25436d !important; }
-html.blue .sidebar-dark { background-color: #081329; }
+html.blue .bg-zinc-950, html.blue .bg-background { background-color: #0A1226 !important; }
+html.blue .bg-zinc-900 { background-color: #101B36 !important; }
+html.blue .bg-zinc-800 { background-color: #16264A !important; }
+html.blue .bg-zinc-700 { background-color: #1E3360 !important; }
+html.blue .text-zinc-100 { color: #EAF1FF !important; }
+html.blue .text-zinc-200, html.blue .text-zinc-300 { color: #BCCBEA !important; }
+html.blue .text-zinc-400, html.blue .text-zinc-500 { color: #8DA2CC !important; }
+html.blue .border-zinc-800, html.blue .border-zinc-900, html.blue .border-zinc-700 { border-color: #2A4274 !important; }
+html.blue .sidebar-dark { background-color: #081020; }
+html.blue .premium-control:focus { border-color: rgba(56, 189, 248, .7); box-shadow: 0 0 0 3px rgba(56, 189, 248, .16); }
 
 body {
   background-color: var(--tm-bg);
@@ -580,6 +584,23 @@ html.light .premium-control::placeholder { color: #8e8e93; }
 html.light input, html.light textarea, html.light select { color-scheme: light; }
 html.light *::-webkit-scrollbar-track { background: #f2f2f7 !important; }
 html.light *::-webkit-scrollbar-thumb { border-color: #f2f2f7; background: #c7c7cc !important; }
+html.light .bg-zinc-950 { background-color: #FFFFFF !important; }
+html.light .bg-zinc-900 { background-color: #EEF0F6 !important; }
+html.light .bg-zinc-800 { background-color: #E2E6F0 !important; }
+html.light .bg-zinc-700 { background-color: #CDD3E3 !important; }
+html.light .bg-background { background-color: #F6F7FB !important; }
+html.light .text-zinc-100, html.light .text-zinc-900 { color: #14182B !important; }
+html.light .text-zinc-200 { color: #232A45 !important; }
+html.light .text-zinc-300 { color: #3F4660 !important; }
+html.light .text-zinc-400 { color: #5B6380 !important; }
+html.light .text-zinc-500 { color: #6B7391 !important; }
+html.light .text-white { color: #14182B !important; }
+html.light :is(.bg-red-500, .bg-red-600, .bg-indigo-500, .bg-indigo-600, .bg-sky-500, .bg-emerald-600).text-white { color: #FFFFFF !important; }
+html.light .border-zinc-800, html.light .border-zinc-900 { border-color: #D8DCE8 !important; }
+html.light .border-zinc-700, html.light .border-zinc-950 { border-color: #B8BFD3 !important; }
+html.light body { background-color: #F6F7FB; color: #14182B; }
+html.light .premium-control { background: #EEF0F6; border-color: #B8BFD3; color: #14182B; }
+html.light .premium-control:focus { border-color: #4F46E5; background: #FFFFFF; box-shadow: 0 0 0 3px rgba(79, 70, 229, .16); }
 
 /* Scrollbar en modo claro */
 html.light *::-webkit-scrollbar-track { background: #f1f5f9 !important; }
