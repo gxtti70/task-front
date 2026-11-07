@@ -5,7 +5,7 @@ export type Theme = 'light' | 'dark' | 'blue';
 const STORAGE_KEY = 'taskmanager-theme';
 
 function loadTheme(): Theme {
-  if (typeof window === 'undefined') return 'system';
+  if (typeof window === 'undefined') return 'dark';
   const raw = localStorage.getItem(STORAGE_KEY) as Theme | null;
   return raw === 'light' || raw === 'dark' || raw === 'blue' ? raw : 'dark';
 }
