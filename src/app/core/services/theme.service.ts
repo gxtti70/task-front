@@ -25,7 +25,7 @@ export class ThemeService {
     effect(() => {
       const t = this.theme();
       applyThemeClass(t);
-      localStorage.setItem(STORAGE_KEY, t);
+      if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEY, t);
     });
   }
 
