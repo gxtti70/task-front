@@ -150,52 +150,95 @@
         } @else if (!chat.messages().length) {
           <p class="pt-10 text-center text-xs text-zinc-600">Aún no hay mensajes. Estrena la conversación…</p>
         }
-        @for (message of chat.messages(); track message.id) {
-          <article class="chat-message-row flex items-end gap-2"
-                   [ngClass]="message.authorId === currentUserId() ? 'justify-end' : ''">
-            @if (message.authorId !== currentUserId()) {
-              <span aria-hidden="true"
-                    class="chat-message-avatar mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold">
-                {{ initialsOf(message.authorName) }}
-              </span>
-            }
-            <div class="chat-message-content min-w-0 max-w-[86%] sm:max-w-[75%]">
-              <p class="chat-message-meta text-[10px]" [ngClass]="message.authorId === currentUserId() ? 'text-right' : ''">
-                {{ message.authorName }} · {{ message.createdAt | date:'shortTime' }}
-              </p>
-              <p class="chat-message-bubble mt-1 whitespace-pre-line rounded-2xl border px-3.5 py-2.5 text-sm leading-relaxed"
-                 [ngClass]="message.authorId === currentUserId()
-                   ? 'is-mine rounded-br-md'
-                   : 'is-other rounded-bl-md'">
-                {{ message.body }}
-              </p>
-              @if (message.messageType === 'FILE') {
-                <div class="mt-1.5 flex items-start gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 max-w-[85%] sm:max-w-[75%]">
-                  <lucide-icon name="{{ getFileIcon(message.fileContentType) }}" class="h-4 w-4 shrink-0 mt-0.5"></lucide-icon>
-                  <div class="flex-1 min-w-0">
-                    <div class="text-[10px] truncate text-zinc-300">{{ message.fileName }}</div>
-                    <div class="text-[10px] text-zinc-500">{{ formatFileSize(message.fileSizeBytes) }}</div>
-                  </div>
-                  @if (message.fileContentType?.startsWith('audio/')) {
-                    <audio controls class="h-6 w-24 shrink-0" [src]="message.downloadUrl"></audio>
-                  } @else if (message.fileContentType?.startsWith('image/')) {
-                    <img [src]="message.downloadUrl" alt="Imagen adjunta" class="max-w-xs max-h-24 rounded shrink-0">
-                  } @else {
-                    <button type="button" class="text-[10px] text-zinc-400 hover:text-zinc-200 underline shrink-0"
-                            (click)="onDownloadFile(message)">
-                      Descargar
-                    </button>
-                  }
-                  @if (message.authorId === currentUserId()) {
-                    <button type="button" class="premium-icon-button shrink-0" aria-label="Eliminar archivo"
-                            (click)="onDeleteFile(message)">
-                      <lucide-icon name="trash-2" class="h-3 w-3"></lucide-icon>
-                    </button>
+        @for (item of displayItems(); track item.id) {
+          @if (item.type === 'image-grid') {
+            <article class="chat-message-row flex items-end gap-2" [ngClass]="item.messages[0].authorId === currentUserId() ? 'justify-end' : ''">
+              @if (item.messages[0].authorId !== currentUserId()) {
+                <span aria-hidden="true" class="chat-message-avatar flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold">
+                  {{ initialsOf(item.messages[0].authorName) }}
+                </span>
+              }
+              <div class="chat-message-content min-w-0 max-w-[86%] sm:max-w-[75%]">
+                <p class="chat-message-meta text-[10px]" [ngClass]="item.messages[0].authorId === currentUserId() ? 'text-right' : ''">
+                  {{ item.messages[0].authorName }} · {{ item.messages[0].createdAt | date:'shortTime' }}
+                </p>
+                <div class="chat-image-grid mt-1">
+                  @for (image of item.messages; track image.id) {
+                    <div class="chat-image-grid-tile">
+                      <button type="button" class="chat-image-grid-open" (click)="openImage(image)"
+                              [attr.aria-label]="'Ver imagen: ' + (image.fileName || 'Foto compartida')">
+                        <img [src]="image.downloadUrl" [alt]="image.body || image.fileName || 'Foto compartida'" loading="lazy" decoding="async">
+                        <span>{{ image.fileName || 'Foto' }}</span>
+                      </button>
+                      @if (image.authorId === currentUserId()) {
+                        <button type="button" class="chat-image-delete" aria-label="Eliminar imagen" (click)="onDeleteFile(image)">
+                          <lucide-icon name="trash-2" class="h-3.5 w-3.5"></lucide-icon>
+                        </button>
+                      }
+                    </div>
                   }
                 </div>
+              </div>
+            </article>
+          } @else {
+            @let message = item.message;
+            <article class="chat-message-row flex items-end gap-2" [ngClass]="message.authorId === currentUserId() ? 'justify-end' : ''">
+              @if (message.authorId !== currentUserId()) {
+                <span aria-hidden="true" class="chat-message-avatar mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold">
+                  {{ initialsOf(message.authorName) }}
+                </span>
               }
-            </div>
-          </article>
+              <div class="chat-message-content min-w-0 max-w-[86%] sm:max-w-[75%]">
+                <p class="chat-message-meta text-[10px]" [ngClass]="message.authorId === currentUserId() ? 'text-right' : ''">
+                  {{ message.authorName }} · {{ message.createdAt | date:'shortTime' }}
+                </p>
+                @if (isImageMessage(message)) {
+                  <figure class="chat-image-card mt-1">
+                    <button type="button" class="chat-image-card-open" (click)="openImage(message)"
+                            [attr.aria-label]="'Ampliar imagen: ' + (message.fileName || 'Foto compartida')">
+                      <img [src]="message.downloadUrl" [alt]="message.body || message.fileName || 'Foto compartida'" loading="lazy" decoding="async">
+                      <span class="chat-image-card-caption">
+                        <strong>{{ message.fileName || 'Foto compartida' }}</strong>
+                        <small>{{ formatFileSize(message.fileSizeBytes) }} · Ver en pantalla completa</small>
+                      </span>
+                    </button>
+                    @if (message.authorId === currentUserId()) {
+                      <button type="button" class="chat-image-delete" aria-label="Eliminar imagen" (click)="onDeleteFile(message)">
+                        <lucide-icon name="trash-2" class="h-3.5 w-3.5"></lucide-icon>
+                      </button>
+                    }
+                  </figure>
+                  @if (message.body) {
+                    <p class="chat-image-message-caption">{{ message.body }}</p>
+                  }
+                } @else if (message.messageType !== 'FILE' || message.body) {
+                  <p class="chat-message-bubble mt-1 whitespace-pre-line rounded-2xl border px-3.5 py-2.5 text-sm leading-relaxed"
+                     [ngClass]="message.authorId === currentUserId() ? 'is-mine rounded-br-md' : 'is-other rounded-bl-md'">
+                    {{ message.body }}
+                  </p>
+                }
+                @if (message.messageType === 'FILE' && !isImageMessage(message)) {
+                  <div class="chat-file-card mt-1.5 flex items-start gap-2 rounded-lg border px-3 py-2">
+                    <lucide-icon name="{{ getFileIcon(message.fileContentType) }}" class="mt-0.5 h-4 w-4 shrink-0"></lucide-icon>
+                    <div class="min-w-0 flex-1">
+                      <div class="truncate text-[10px]">{{ message.fileName }}</div>
+                      <div class="text-[10px] text-zinc-500">{{ formatFileSize(message.fileSizeBytes) }}</div>
+                    </div>
+                    @if (message.fileContentType?.startsWith('audio/')) {
+                      <audio controls class="h-6 w-24 shrink-0" [src]="message.downloadUrl"></audio>
+                    } @else {
+                      <button type="button" class="shrink-0 text-[10px] text-zinc-400 underline hover:text-zinc-200" (click)="onDownloadFile(message)">Descargar</button>
+                    }
+                    @if (message.authorId === currentUserId()) {
+                      <button type="button" class="premium-icon-button shrink-0" aria-label="Eliminar archivo" (click)="onDeleteFile(message)">
+                        <lucide-icon name="trash-2" class="h-3 w-3"></lucide-icon>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            </article>
+          }
         }
         @if (chat.loadingOlderMessages()) {
           <p class="text-center text-[11px] text-zinc-600">Cargando mensajes anteriores…</p>
@@ -242,6 +285,40 @@
     }
   </section>
 </div>
+
+@if (lightboxImage(); as image) {
+  <div class="chat-lightbox-backdrop" (click)="closeLightbox()" (touchstart)="$event.stopPropagation()">
+    <section appFocusTrap class="chat-lightbox" role="dialog" aria-modal="true" aria-label="Visor de imágenes" (click)="$event.stopPropagation()">
+      <header class="chat-lightbox-header">
+        <div class="min-w-0">
+          <strong>{{ image.fileName || 'Foto compartida' }}</strong>
+          <span>{{ image.authorName }} · {{ image.createdAt | date:'short' }}</span>
+        </div>
+        <div class="chat-lightbox-actions">
+          <span>{{ lightboxIndex() + 1 }} / {{ imageMessages().length }}</span>
+          <button type="button" aria-label="Cerrar visor" (click)="closeLightbox()"><lucide-icon name="x" class="h-5 w-5"></lucide-icon></button>
+        </div>
+      </header>
+      <div class="chat-lightbox-stage">
+        @if (imageMessages().length > 1) {
+          <button type="button" class="chat-lightbox-nav chat-lightbox-prev" aria-label="Imagen anterior" (click)="moveLightbox(-1)">
+            <lucide-icon name="chevron-left" class="h-6 w-6"></lucide-icon>
+          </button>
+        }
+        <img [src]="image.downloadUrl" [alt]="image.body || image.fileName || 'Foto compartida'">
+        @if (imageMessages().length > 1) {
+          <button type="button" class="chat-lightbox-nav chat-lightbox-next" aria-label="Imagen siguiente" (click)="moveLightbox(1)">
+            <lucide-icon name="chevron-right" class="h-6 w-6"></lucide-icon>
+          </button>
+        }
+      </div>
+      <footer class="chat-lightbox-footer">
+        <span>{{ image.body || image.fileName || 'Foto compartida' }}</span>
+        <span>{{ formatFileSize(image.fileSizeBytes) }}</span>
+      </footer>
+    </section>
+  </div>
+}
 
 <!-- Diálogo: nueva sala / nuevo DM -->
 @if (dialogOpen()) {

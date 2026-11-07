@@ -19,12 +19,25 @@
       <lucide-icon name="settings" class="h-4 w-4"></lucide-icon>
     </button>
     <!-- Botón de la Campana -->
-    <button (click)="toggleNotifications(); $event.stopPropagation()" aria-label="Notificaciones"
+    <button type="button" (click)="toggleNotifications(); $event.stopPropagation()"
+            [attr.aria-label]="'Notificaciones. ' + pushStatus() + '. Abrir notificaciones'"
+            [title]="'Notificaciones de mensajes: ' + pushStatus()"
             [style.--profile-accent]="auth.currentUser()?.accentColor || '#818cf8'"
-            class="profile-accent-button relative flex h-10 w-10 items-center justify-center rounded-xl border border-transparent p-2 text-zinc-400 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/60 md:h-9 md:w-9">
+            class="profile-accent-button relative flex h-10 w-10 items-center justify-center gap-2 rounded-xl border border-transparent p-2 text-zinc-400 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/60 md:h-9 md:w-auto md:px-2.5">
       <lucide-icon name="bell" class="h-4 w-4"></lucide-icon>
+      <span class="max-w-[4.5rem] truncate text-[9px] font-medium md:hidden"
+            [ngClass]="push.isSubscribed() ? 'text-emerald-500' : push.permission() === 'denied' ? 'text-red-500' : 'text-zinc-500'">
+        {{ pushStatusCompact() }}
+      </span>
+      <span class="hidden text-[10px] font-medium md:inline"
+            [ngClass]="push.isSubscribed() ? 'text-emerald-500' : push.permission() === 'denied' ? 'text-red-500' : 'text-zinc-500'">
+        {{ pushStatus() }}
+      </span>
+      <span class="push-status-dot absolute bottom-1 right-1 h-2 w-2 rounded-full md:bottom-1.5 md:right-1.5"
+            [ngClass]="push.isSubscribed() ? 'bg-emerald-500' : push.permission() === 'denied' ? 'bg-red-500' : 'bg-zinc-400'"
+            aria-hidden="true"></span>
       @if (hasUnreadNotifications()) {
-        <span class="absolute top-1.5 right-1.5 h-2 w-2 bg-amber-500 rounded-full ring-2 ring-zinc-950 animate-pulse"></span>
+        <span class="notification-unread-dot absolute right-1.5 top-1.5 h-2 w-2 animate-pulse rounded-full bg-amber-500 md:right-2 md:top-1.5" aria-hidden="true"></span>
       }
     </button>
 

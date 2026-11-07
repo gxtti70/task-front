@@ -26,6 +26,7 @@ export class PushNotificationService {
   private registration: ServiceWorkerRegistration | null = null;
 
   readonly isSupported = signal(typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window);
+  readonly isReady = signal(false);
   readonly permission = signal<NotificationPermission>('default');
   readonly isSubscribed = signal(false);
   readonly vapidPublicKey = signal<string | null>(null);
@@ -34,6 +35,8 @@ export class PushNotificationService {
   constructor() {
     if (this.isSupported()) {
       void this.init();
+    } else {
+      this.isReady.set(true);
     }
   }
 
@@ -66,6 +69,8 @@ export class PushNotificationService {
       }
     } catch (err) {
       console.warn('Push notifications no disponibles:', err);
+    } finally {
+      this.isReady.set(true);
     }
   }
 

@@ -1,4 +1,4 @@
-import { Component, DestroyRef, NgZone, OnInit, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, HostListener, NgZone, OnInit, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -14,6 +14,10 @@ import { UserDirectoryService } from '../../core/services/user-directory.service
 import { ToastService } from '../../core/services/toast.service';
 import { FocusTrapDirective } from '../../shared/directives/focus-trap.directive';
 import { SkeletonComponent } from '../../shared/ui/skeleton.component';
+
+type ChatDisplayItem =
+  | { type: 'message'; id: string; message: ChatMessage }
+  | { type: 'image-grid'; id: string; messages: ChatMessage[] };
 
 @Component({
   selector: 'app-chat',
@@ -35,6 +39,32 @@ export class ChatComponent implements OnInit {
   readonly rooms = computed(() => this.chat.channels().filter(channel => channel.projectId !== null));
   readonly directs = computed(() => this.chat.channels().filter(channel => channel.projectId === null));
   readonly currentUserId = computed(() => this.auth.currentUser()?.id ?? '');
+  readonly imageMessages = computed(() => this.chat.messages().filter(message => this.isImageMessage(message)));
+  readonly lightboxIndex = signal(-1);
+  readonly lightboxImage = computed(() => this.imageMessages()[this.lightboxIndex()] ?? null);
+  readonly displayItems = computed<ChatDisplayItem[]>(() => {
+    const messages = this.chat.messages();
+    const items: ChatDisplayItem[] = [];
+    for (let index = 0; index < messages.length;) {
+      const message = messages[index];
+      if (this.isImageMessage(message)) {
+        const group = [message];
+        let next = index + 1;
+        while (next < messages.length && group.length < 4
+          && this.isImageMessage(messages[next])
+          && messages[next].authorId === message.authorId) {
+          group.push(messages[next++]);
+        }
+        if (group.length > 1) items.push({ type: 'image-grid', id: message.id, messages: group });
+        else items.push({ type: 'message', id: message.id, message });
+        index = next;
+        continue;
+      }
+      items.push({ type: 'message', id: message.id, message });
+      index++;
+    }
+    return items;
+  });
 
   readonly projectList = signal<Project[]>([]);
   readonly userList = signal<User[]>([]);
@@ -182,6 +212,40 @@ export class ChatComponent implements OnInit {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  isImageMessage(message: ChatMessage): boolean {
+    return message.messageType === 'FILE' && !!message.fileContentType?.startsWith('image/') && !!message.downloadUrl;
+  }
+
+  openImage(message: ChatMessage): void {
+    const index = this.imageMessages().findIndex(image => image.id === message.id);
+    if (index >= 0) this.lightboxIndex.set(index);
+  }
+
+  closeLightbox(): void {
+    this.lightboxIndex.set(-1);
+  }
+
+  moveLightbox(step: number): void {
+    const total = this.imageMessages().length;
+    if (total < 2) return;
+    this.lightboxIndex.update(index => (index + step + total) % total);
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onLightboxKeydown(event: KeyboardEvent): void {
+    if (this.lightboxIndex() < 0) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.closeLightbox();
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      this.moveLightbox(-1);
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      this.moveLightbox(1);
+    }
   }
 
   onSendFile(): void {

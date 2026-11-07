@@ -10,6 +10,7 @@ import { ProfileModalComponent } from '../profile/profile-modal.component';
 import { TaskService } from '../../core/services/task.service';
 import { Task } from '../../core/models';
 import { FocusTrapDirective } from '../../shared/directives/focus-trap.directive';
+import { PushNotificationService } from '../../core/services/push-notification.service';
 
 @Component({
   selector: 'app-topbar',
@@ -23,6 +24,7 @@ export class TopbarComponent implements OnInit, OnDestroy {
   private toast = inject(ToastService);
   readonly router = inject(Router);
   private taskService = inject(TaskService);
+  readonly push = inject(PushNotificationService);
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
   private hasLoadedNotifications = false;
 
@@ -36,6 +38,18 @@ export class TopbarComponent implements OnInit, OnDestroy {
   unreadCount = computed(() => this.notifications().filter(item => !item.read).length);
   hasUnreadNotifications = computed(() => this.unreadCount() > 0);
   hasNotifications = computed(() => this.hasUnreadNotifications());
+  readonly pushStatus = computed(() => {
+    if (!this.push.isSupported()) return 'No disponibles';
+    if (!this.push.isReady()) return 'Comprobando…';
+    if (this.push.permission() === 'denied') return 'Bloqueadas';
+    return this.push.isSubscribed() ? 'Push activadas' : 'Push desactivadas';
+  });
+  readonly pushStatusCompact = computed(() => {
+    if (!this.push.isSupported()) return 'No disponible';
+    if (!this.push.isReady()) return 'Comprobando';
+    if (this.push.permission() === 'denied') return 'Bloqueadas';
+    return this.push.isSubscribed() ? 'Activadas' : 'Desactivadas';
+  });
   searchQuery = signal('');
   searchTasks = signal<Task[]>([]);
   searchLoading = signal(false);
