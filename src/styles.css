@@ -602,6 +602,21 @@ html.light body { background-color: #F6F7FB; color: #14182B; }
 html.light .premium-control { background: #EEF0F6; border-color: #B8BFD3; color: #14182B; }
 html.light .premium-control:focus { border-color: #4F46E5; background: #FFFFFF; box-shadow: 0 0 0 3px rgba(79, 70, 229, .16); }
 html.light app-topbar > header { background-color: #FFFFFF !important; border-color: #D8DCE8 !important; }
+html.light .sidebar-dark [class*="bg-amber-500/10"] {
+  background-color: #FFF4D6 !important;
+  border-color: #E8C66A !important;
+  color: #805B00 !important;
+}
+html.light .sidebar-dark [class*="bg-sky-500/10"] {
+  background-color: #E6F4FF !important;
+  border-color: #A7D8F5 !important;
+  color: #075985 !important;
+}
+html.light .sidebar-dark [routerLink="/dashboard/subscription"] {
+  background-color: #EAF3FF !important;
+  border-color: #B8CBE8 !important;
+  color: #315A91 !important;
+}
 
 /* Scrollbar en modo claro */
 html.light *::-webkit-scrollbar-track { background: #f1f5f9 !important; }
