@@ -489,9 +489,9 @@ body {
    Overrides de modo claro (html.light) — sobrescriben clases Tailwind oscuras
    ========================================================================== */
 html.light .bg-zinc-950 { background-color: #ffffff !important; }
-html.light .bg-zinc-900 { background-color: #f3f4f6 !important; }
-html.light .bg-zinc-800 { background-color: #e2e8f0 !important; }
-html.light .bg-zinc-700 { background-color: #cbd5e1 !important; }
+html.light .bg-zinc-900 { background-color: #f2f2f7 !important; }
+html.light .bg-zinc-800 { background-color: #e5e5ea !important; }
+html.light .bg-zinc-700 { background-color: #d1d1d6 !important; }
 html.light .bg-zinc-950\/40 { background-color: rgba(255, 255, 255, 0.4) !important; }
 html.light .bg-zinc-900\/80 { background-color: rgba(243, 244, 246, 0.8) !important; }
 html.light .bg-zinc-950\/50 { background-color: rgba(255, 255, 255, 0.5) !important; }
@@ -503,6 +503,10 @@ html.light .bg-white\/\[0\.08\] { background-color: rgba(0, 0, 0, 0.08) !importa
 html.light .bg-amber-950\/40 { background-color: rgba(247, 199, 89, 0.4) !important; }
 html.light .bg-sky-950\/50 { background-color: rgba(4, 94, 207, 0.5) !important; }
 html.light .bg-red-950\/80 { background-color: rgba(127, 29, 29, 0.8) !important; }
+html.light .bg-black { background-color: #ffffff !important; }
+html.light .bg-black\/20 { background-color: rgba(0, 0, 0, 0.04) !important; }
+html.light .bg-black\/60 { background-color: rgba(15, 23, 42, 0.28) !important; }
+html.light .bg-black\/70 { background-color: rgba(15, 23, 42, 0.32) !important; }
 
 html.light .text-zinc-900 { color: #0f172a !important; }
 html.light .text-zinc-100 { color: #0f172a !important; }
@@ -512,6 +516,7 @@ html.light .text-zinc-400 { color: #94a3b8 !important; }
 html.light .text-zinc-500 { color: #64748b !important; }
 html.light .text-zinc-600 { color: #475569 !important; }
 html.light .text-zinc-700 { color: #1e293b !important; }
+html.light .text-white { color: #1c1c1e !important; }
 
 html.light .border-zinc-800 { border-color: #e2e8f0 !important; }
 html.light .border-zinc-900 { border-color: #cbd5e1 !important; }
@@ -546,6 +551,28 @@ html.light .premium-primary-button:hover { background: #f8fafc !important; }
 /* Chat bubbles en modo claro */
 html.light .bg-sky-950\/60 { background-color: rgba(4, 94, 207, 0.15) !important; }
 html.light .bg-zinc-900\/80 { background-color: rgba(243, 244, 246, 0.8) !important; }
+
+/* Superficies y controles con acabado claro similar a iOS. */
+html.light body { background-color: #f2f2f7; color: #1c1c1e; }
+html.light .premium-overlay { background: rgba(29, 29, 31, 0.28); }
+html.light .premium-dialog {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(60, 60, 67, 0.16);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
+}
+html.light .premium-dialog-header {
+  background: linear-gradient(90deg, rgba(0, 122, 255, 0.06), transparent 80%);
+  border-color: rgba(60, 60, 67, 0.12);
+}
+html.light .premium-control {
+  background: #f2f2f7;
+  border-color: #d1d1d6;
+  color: #1c1c1e;
+}
+html.light .premium-control::placeholder { color: #8e8e93; }
+html.light input, html.light textarea, html.light select { color-scheme: light; }
+html.light *::-webkit-scrollbar-track { background: #f2f2f7 !important; }
+html.light *::-webkit-scrollbar-thumb { border-color: #f2f2f7; background: #c7c7cc !important; }
 
 /* Scrollbar en modo claro */
 html.light *::-webkit-scrollbar-track { background: #f1f5f9 !important; }
