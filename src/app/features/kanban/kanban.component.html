@@ -125,13 +125,13 @@
                       <option [value]="status.value">{{ status.label }}</option>
                     }
                   </select>
-                  <button (click)="commentingTask.set(task)" class="min-h-11 min-w-0 whitespace-normal break-words rounded-xl border border-white/10 px-2 py-2 text-[11px] leading-tight text-zinc-300 transition hover:border-indigo-300/30 hover:bg-indigo-300/[0.06] hover:text-white">Comentarios</button>
+                  <button (click)="commentingTask.set(task)" class="col-span-2 min-h-11 min-w-0 whitespace-nowrap rounded-xl border border-white/10 px-2 py-2 text-[11px] leading-tight text-zinc-300 transition hover:border-indigo-300/30 hover:bg-indigo-300/[0.06] hover:text-white">Comentarios</button>
                   @if (featureGate.canUseAttachments()) {
                     <button (click)="attachingTask.set(task)" class="min-h-11 min-w-0 whitespace-normal break-words rounded-xl border border-white/10 px-2 py-2 text-[11px] leading-tight text-zinc-300 transition hover:border-indigo-300/30 hover:bg-indigo-300/[0.06] hover:text-white">Adjuntos</button>
                   }
                   @if (authService.canManageTasks()) {
                     <button (click)="openEditModal(task)" class="min-h-11 min-w-0 whitespace-normal break-words rounded-xl border border-white/10 px-2 py-2 text-[11px] leading-tight text-zinc-300 transition hover:border-indigo-300/30 hover:bg-indigo-300/[0.06] hover:text-white">Editar</button>
-                    <button (click)="requestDelete(task)" class="min-h-11 min-w-0 whitespace-normal break-words rounded-xl border border-red-950/80 px-2 py-2 text-[11px] leading-tight text-red-300 transition hover:bg-red-950/60">Borrar</button>
+                    <button (click)="requestDelete(task)" class="min-h-11 min-w-0 whitespace-nowrap rounded-xl border border-red-700 bg-red-600 px-2 py-2 text-[11px] leading-tight text-white transition hover:bg-red-700">Borrar</button>
                   }
                 </div>
               </article>
