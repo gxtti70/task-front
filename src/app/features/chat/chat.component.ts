@@ -39,6 +39,18 @@ export class ChatComponent implements OnInit {
   readonly rooms = computed(() => this.chat.channels().filter(channel => channel.projectId !== null));
   readonly directs = computed(() => this.chat.channels().filter(channel => channel.projectId === null));
   readonly currentUserId = computed(() => this.auth.currentUser()?.id ?? '');
+  readonly pushStatusLabel = computed(() => {
+    if (!this.push.isSupported()) return 'No disp.';
+    if (!this.push.isReady()) return 'Revisando';
+    if (this.push.permission() === 'denied') return 'Bloqueadas';
+    return this.push.isSubscribed() ? 'Activas' : 'Inactivas';
+  });
+  readonly pushStatusTitle = computed(() => {
+    if (!this.push.isSupported()) return 'Push no disponibles en este navegador';
+    if (!this.push.isReady()) return 'Comprobando estado de notificaciones push';
+    if (this.push.permission() === 'denied') return 'Notificaciones push bloqueadas por el navegador';
+    return this.push.isSubscribed() ? 'Notificaciones push activadas' : 'Notificaciones push desactivadas';
+  });
   readonly imageMessages = computed(() => this.chat.messages().filter(message => this.isImageMessage(message)));
   readonly lightboxIndex = signal(-1);
   readonly lightboxImage = computed(() => this.imageMessages()[this.lightboxIndex()] ?? null);

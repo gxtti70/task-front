@@ -10,12 +10,15 @@
               (click)="openDialog('room')">
         <lucide-icon name="plus" class="h-4 w-4"></lucide-icon>
       </button>
-      <button type="button" class="premium-icon-button" (click)="subscribePush()"
-                [title]="push.isSubscribed() ? 'Desactivar notificaciones push' : 'Activar notificaciones push'"
-                aria-label="Notificaciones push"
-                [class.text-zinc-400]="!push.isSubscribed()"
-                [class.text-white]="push.isSubscribed()">
-        <lucide-icon name="bell" class="h-4 w-4"></lucide-icon>
+      <button type="button" class="chat-push-toggle" (click)="subscribePush()"
+              [disabled]="!push.isReady() || !push.isSupported() || push.permission() === 'denied'"
+              [title]="pushStatusTitle() + '. Pulsa para cambiar'"
+              [attr.aria-label]="pushStatusTitle() + '. Pulsa para cambiar'">
+        <span class="chat-push-toggle-icon" [ngClass]="push.isSubscribed() ? 'is-enabled' : push.permission() === 'denied' ? 'is-blocked' : ''">
+          <lucide-icon name="bell" class="h-4 w-4"></lucide-icon>
+          <span class="chat-push-status-dot" [ngClass]="push.isSubscribed() ? 'is-enabled' : push.permission() === 'denied' ? 'is-blocked' : ''"></span>
+        </span>
+        <span class="chat-push-status-label" [ngClass]="push.isSubscribed() ? 'is-enabled' : push.permission() === 'denied' ? 'is-blocked' : ''">{{ pushStatusLabel() }}</span>
       </button>
     </header>
     <div class="flex-1 space-y-1 overflow-y-auto px-2 py-2">
@@ -119,6 +122,16 @@
         <lucide-icon name="menu" class="h-5 w-5"></lucide-icon>
       </button>
       <span class="text-xs font-semibold text-zinc-100">Chat</span>
+      <button type="button" class="chat-push-toggle mobile" (click)="subscribePush()"
+              [disabled]="!push.isReady() || !push.isSupported() || push.permission() === 'denied'"
+              [title]="pushStatusTitle() + '. Pulsa para cambiar'"
+              [attr.aria-label]="pushStatusTitle() + '. Pulsa para cambiar'">
+        <span class="chat-push-toggle-icon" [ngClass]="push.isSubscribed() ? 'is-enabled' : push.permission() === 'denied' ? 'is-blocked' : ''">
+          <lucide-icon name="bell" class="h-4 w-4"></lucide-icon>
+          <span class="chat-push-status-dot" [ngClass]="push.isSubscribed() ? 'is-enabled' : push.permission() === 'denied' ? 'is-blocked' : ''"></span>
+        </span>
+        <span class="chat-push-status-label" [ngClass]="push.isSubscribed() ? 'is-enabled' : push.permission() === 'denied' ? 'is-blocked' : ''">{{ pushStatusLabel() }}</span>
+      </button>
       <button type="button" class="ml-2 premium-icon-button" title="Nueva conversación" aria-label="Nueva conversación"
               (click)="openDialog('room')">
         <lucide-icon name="plus" class="h-4 w-4"></lucide-icon>
