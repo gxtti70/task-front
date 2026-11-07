@@ -119,8 +119,8 @@
       }
     </div>
     @if (showLabels()) {
-      <button (click)="toggleTheme()" class="text-zinc-500 hover:text-white transition-colors p-1 rounded hover:bg-zinc-900 animate-fade-in shrink-0" [title]="'Cambiar a ' + themeLabel()" aria-label="Cambiar tema">
-        <lucide-icon [name]="theme.theme() === darkThemeName ? 'moon' : 'sun'" class="h-3.5 w-3.5"></lucide-icon>
+      <button (click)="toggleTheme()" class="text-zinc-500 hover:text-white transition-colors p-1 rounded hover:bg-zinc-900 animate-fade-in shrink-0" [title]="'Cambiar a ' + themeLabel()" [attr.aria-label]="'Cambiar tema a ' + themeLabel()">
+        <lucide-icon [name]="themeIcon()" class="h-3.5 w-3.5"></lucide-icon>
       </button>
       <button (click)="authService.logout()" class="text-zinc-500 hover:text-white transition-colors p-1 rounded hover:bg-zinc-900 animate-fade-in shrink-0" title="Cerrar sesión" aria-label="Cerrar sesión">
         <lucide-icon name="log-out" class="h-3.5 w-3.5"></lucide-icon>

@@ -24,8 +24,6 @@ export class SidebarComponent implements OnInit {
   public theme = inject(ThemeService);
   private toast = inject(ToastService);
 
-  /** Valor interno para comparar el tema oscuro sin usar string literal en el template. */
-  protected readonly darkThemeName = 'dark';
   isCollapsed = signal(false);
 
   /** Drawer state on small screens, controlled by the dashboard shell. */
@@ -91,7 +89,7 @@ export class SidebarComponent implements OnInit {
     const t = this.theme.theme();
     if (t === 'dark') return 'moon';
     if (t === 'light') return 'sun';
-    return 'monitor';
+    return 'droplet';
   }
 
   /** Etiqueta legible del tema actual. */
@@ -99,10 +97,10 @@ export class SidebarComponent implements OnInit {
     const t = this.theme.theme();
     if (t === 'dark') return 'Oscuro';
     if (t === 'light') return 'Claro';
-    return 'Sistema';
+    return 'Azul';
   }
 
-  /** Cambia al siguiente tema: claro → oscuro → sistema → claro. */
+  /** Cambia al siguiente tema: claro → oscuro → azul → claro. */
   toggleTheme(): void {
     this.theme.toggleLightDark();
   }

@@ -16,39 +16,39 @@ import { catchError } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, RouterOutlet, SidebarComponent, TopbarComponent, FocusTrapDirective],
   template: `
-    <div class="flex h-dvh w-full overflow-hidden bg-background">
+    <div class="flex h-dvh w-full overflow-hidden bg-background [class.bg-white]:bg-zinc-50">
       @if (mobileNavOpen()) {
         <div class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden" (click)="mobileNavOpen.set(false)" aria-hidden="true"></div>
       }
       <app-sidebar [mobileOpen]="mobileNavOpen()" (closed)="mobileNavOpen.set(false)"></app-sidebar>
       <div class="flex-1 flex flex-col min-w-0">
         <app-topbar (menuToggle)="mobileNavOpen.update(v => !v)"></app-topbar>
-        <main class="min-w-0 flex-1 overflow-y-auto overflow-x-hidden bg-background p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:p-6">
+        <main class="min-w-0 flex-1 overflow-y-auto overflow-x-hidden bg-background p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:p-6 [class.bg-white]:bg-zinc-50">
           <router-outlet></router-outlet>
         </main>
       </div>
     </div>
     @if (auth.isLoggingOut()) {
-      <div class="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/95 backdrop-blur-sm" role="status" aria-live="polite" aria-label="Cerrando sesión">
+      <div class="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/95 backdrop-blur-sm [class.bg-white]:bg-zinc-50/[0.95]" role="status" aria-live="polite" aria-label="Cerrando sesión">
         <div class="flex flex-col items-center gap-4 text-center">
-          <span class="h-10 w-10 animate-spin rounded-full border-2 border-zinc-700 border-t-sky-400" aria-hidden="true"></span>
-          <p class="text-sm font-medium text-zinc-200">Cerrando sesión…</p>
+          <span class="h-10 w-10 animate-spin rounded-full border-2 border-zinc-700 border-t-sky-400 [class.bg-white]:border-zinc-300 [class.bg-white]:border-t-indigo-400" aria-hidden="true"></span>
+          <p class="text-sm font-medium text-zinc-200 [class.bg-white]:text-zinc-900">Cerrando sesión…</p>
         </div>
       </div>
     }
     @if (welcome(); as announcement) {
       <div class="premium-overlay z-[90]" (click)="closeWelcome()">
         <section appFocusTrap role="dialog" aria-modal="true" [attr.aria-label]="announcement.title" class="premium-dialog flex w-full max-w-lg flex-col overflow-hidden" (click)="$event.stopPropagation()">
-          <header class="premium-dialog-header shrink-0 bg-gradient-to-br from-indigo-950/65 via-violet-950/25 to-transparent px-6 py-7">
-            <div class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-sky-400/10 text-sky-300">✦</div>
-            <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-300">Novedades</p>
-            <h2 class="mt-2 text-xl font-semibold text-white">{{ announcement.title }}</h2>
+          <header class="premium-dialog-header shrink-0 bg-gradient-to-br from-indigo-950/65 via-violet-950/25 to-transparent px-6 py-7 [class.bg-white]:from-indigo-200 [class.bg-white]:via-violet-200 [class.bg-white]:to-transparent">
+            <div class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-sky-400/10 text-sky-300 [class.bg-white]:bg-sky-100 [class.bg-white]:text-sky-500">✦</div>
+            <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-300 [class.bg-white]:text-indigo-600">Novedades</p>
+            <h2 class="mt-2 text-xl font-semibold text-white [class.bg-white]:text-zinc-900">{{ announcement.title }}</h2>
           </header>
           <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
-            <p class="whitespace-pre-line text-sm leading-relaxed text-zinc-300">{{ announcement.body }}</p>
-            <label class="flex cursor-pointer items-center gap-2 text-xs text-zinc-500"><input type="checkbox" [checked]="rememberWelcome()" (change)="updateRememberWelcome($event)" class="accent-sky-400">No mostrar de nuevo</label>
+            <p class="whitespace-pre-line text-sm leading-relaxed text-zinc-300 [class.bg-white]:text-zinc-700">{{ announcement.body }}</p>
+            <label class="flex cursor-pointer items-center gap-2 text-xs text-zinc-500 [class.bg-white]:text-zinc-700"><input type="checkbox" [checked]="rememberWelcome()" (change)="updateRememberWelcome($event)" class="accent-sky-400">No mostrar de nuevo</label>
           </div>
-          <footer class="shrink-0 border-t border-white/[0.07] bg-zinc-950/70 px-6 py-4"><div class="flex justify-end"><button (click)="closeWelcome()" class="premium-primary-button">Entendido</button></div></footer>
+          <footer class="shrink-0 border-t border-white/[0.07] bg-zinc-950/70 px-6 py-4 [class.bg-white]:border-zinc-200 [class.bg-white]:bg-white/80"><div class="flex justify-end"><button (click)="closeWelcome()" class="premium-primary-button">Entendido</button></div></footer>
         </section>
       </div>
     }

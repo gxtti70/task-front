@@ -428,6 +428,27 @@ body {
   --tm-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
+html.blue {
+  --tm-bg: #0b1730;
+  --tm-bg-secondary: #102344;
+  --tm-text: #e8f1ff;
+  --tm-text-muted: #9db5d8;
+  --tm-border: #25436d;
+  --tm-card: #102344;
+  --tm-input-bg: #0e1e3a;
+  --tm-input-border: #315581;
+  --tm-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+html.blue .bg-zinc-950 { background-color: #0b1730 !important; }
+html.blue .bg-zinc-900 { background-color: #102344 !important; }
+html.blue .bg-zinc-800 { background-color: #183257 !important; }
+html.blue .bg-zinc-700 { background-color: #25436d !important; }
+html.blue .text-zinc-100 { color: #e8f1ff !important; }
+html.blue .text-zinc-200, html.blue .text-zinc-300 { color: #c8daf5 !important; }
+html.blue .text-zinc-400, html.blue .text-zinc-500 { color: #9db5d8 !important; }
+html.blue .border-zinc-800, html.blue .border-zinc-900 { border-color: #25436d !important; }
+html.blue .sidebar-dark { background-color: #081329; }
+
 body {
   background-color: var(--tm-bg);
   color: var(--tm-text);
@@ -462,4 +483,75 @@ body {
 
 .tm-shadow {
   box-shadow: var(--tm-shadow);
+}
+
+/* ==========================================================================
+   Overrides de modo claro (html.light) — sobrescriben clases Tailwind oscuras
+   ========================================================================== */
+html.light .bg-zinc-950 { background-color: #ffffff !important; }
+html.light .bg-zinc-900 { background-color: #f3f4f6 !important; }
+html.light .bg-zinc-800 { background-color: #e2e8f0 !important; }
+html.light .bg-zinc-700 { background-color: #cbd5e1 !important; }
+html.light .bg-zinc-950\/40 { background-color: rgba(255, 255, 255, 0.4) !important; }
+html.light .bg-zinc-900\/80 { background-color: rgba(243, 244, 246, 0.8) !important; }
+html.light .bg-zinc-950\/50 { background-color: rgba(255, 255, 255, 0.5) !important; }
+html.light .bg-zinc-900\/60 { background-color: rgba(243, 244, 246, 0.6) !important; }
+html.light .bg-zinc-900\/40 { background-color: rgba(243, 244, 246, 0.4) !important; }
+html.light .bg-zinc-900\/50 { background-color: rgba(243, 244, 246, 0.5) !important; }
+html.light .bg-black\/20 { background-color: rgba(255, 255, 255, 0.2) !important; }
+html.light .bg-white\/\[0\.08\] { background-color: rgba(0, 0, 0, 0.08) !important; }
+html.light .bg-amber-950\/40 { background-color: rgba(247, 199, 89, 0.4) !important; }
+html.light .bg-sky-950\/50 { background-color: rgba(4, 94, 207, 0.5) !important; }
+html.light .bg-red-950\/80 { background-color: rgba(127, 29, 29, 0.8) !important; }
+
+html.light .text-zinc-900 { color: #0f172a !important; }
+html.light .text-zinc-100 { color: #0f172a !important; }
+html.light .text-zinc-200 { color: #334155 !important; }
+html.light .text-zinc-300 { color: #64748b !important; }
+html.light .text-zinc-400 { color: #94a3b8 !important; }
+html.light .text-zinc-500 { color: #64748b !important; }
+html.light .text-zinc-600 { color: #475569 !important; }
+html.light .text-zinc-700 { color: #1e293b !important; }
+
+html.light .border-zinc-800 { border-color: #e2e8f0 !important; }
+html.light .border-zinc-900 { border-color: #cbd5e1 !important; }
+html.light .border-zinc-950 { border-color: #94a3b8 !important; }
+html.light .border-zinc-700 { border-color: #94a3b8 !important; }
+html.light .border-white\/\[0\.07\] { border-color: rgba(0, 0, 0, 0.07) !important; }
+html.light .border-zinc-800\/70 { border-color: rgba(226, 232, 240, 0.7) !important; }
+html.light .border-zinc-800\/60 { border-color: rgba(226, 232, 240, 0.6) !important; }
+html.light .border-zinc-900\/70 { border-color: rgba(226, 232, 240, 0.7) !important; }
+
+html.light .shadow-black\/60 { box-shadow: rgba(0, 0, 0, 0.1) !important; }
+html.light .placeholder-zinc-500::placeholder { color: #94a3b8 !important; }
+
+/* Sidebar específico en modo claro */
+html.light .sidebar-dark {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+html.light .sidebar-dark .text-zinc-500 { color: #94a3b8 !important; }
+html.light .sidebar-dark .text-zinc-400 { color: #64748b !important; }
+html.light .sidebar-dark .text-zinc-200 { color: #0f172a !important; }
+html.light .sidebar-dark .hover\:bg-zinc-900:hover { background-color: #f3f4f6 !important; }
+
+/* Botones primarios en modo claro */
+html.light .premium-primary-button {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+html.light .premium-primary-button:hover { background: #f8fafc !important; }
+
+/* Chat bubbles en modo claro */
+html.light .bg-sky-950\/60 { background-color: rgba(4, 94, 207, 0.15) !important; }
+html.light .bg-zinc-900\/80 { background-color: rgba(243, 244, 246, 0.8) !important; }
+
+/* Scrollbar en modo claro */
+html.light *::-webkit-scrollbar-track { background: #f1f5f9 !important; }
+html.light *::-webkit-scrollbar-thumb { background: #cbd5e1 !important; }
+
+/* Transición suave al cambiar de tema */
+* {
+  transition: background-color 300ms ease, color 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
 }
