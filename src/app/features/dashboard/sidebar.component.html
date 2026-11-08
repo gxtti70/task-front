@@ -96,11 +96,15 @@
   <!-- Perfil de Usuario y Logout -->
   <div class="p-3 border-t border-zinc-800 flex items-center justify-between gap-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:pb-3">
     <div class="flex items-center gap-2.5 overflow-hidden">
-      @if (avatarUrl()) {
-        <img [src]="avatarUrl()!" class="h-7 w-7 rounded-full bg-zinc-800 object-cover border border-zinc-700 shrink-0" [alt]="displayName()">
-      } @else {
-        <span class="flex h-7 w-7 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-[10px] font-semibold text-zinc-200 shrink-0" aria-hidden="true">{{ avatarInitials() }}</span>
-      }
+      <span class="relative" aria-hidden="true">
+        @if (avatarUrl()) {
+          <img [src]="avatarUrl()!" class="h-7 w-7 rounded-full bg-zinc-800 object-cover border border-zinc-700 shrink-0" [alt]="displayName()">
+        } @else {
+          <span class="flex h-7 w-7 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-[10px] font-semibold text-zinc-200 shrink-0" aria-hidden="true">{{ avatarInitials() }}</span>
+        }
+        <span class="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-zinc-950"
+              [class]="presence.color(authService.currentUser()?.id ?? null)"></span>
+      </span>
       @if (showLabels()) {
         <div class="flex flex-col overflow-hidden animate-fade-in">
           <span class="text-xs font-medium text-zinc-200 truncate">{{ displayName() }}</span>
@@ -120,7 +124,9 @@
     </div>
     @if (showLabels()) {
       <button (click)="toggleTheme()" class="text-zinc-500 hover:text-white transition-colors p-1 rounded hover:bg-zinc-900 animate-fade-in shrink-0" [title]="'Cambiar a ' + themeLabel()" [attr.aria-label]="'Cambiar tema a ' + themeLabel()">
-        <lucide-icon [name]="themeIcon()" class="h-3.5 w-3.5"></lucide-icon>
+        <lucide-icon name="sun" class="h-3.5 w-3.5" [hidden]="theme.theme() !== 'light'"></lucide-icon>
+        <lucide-icon name="moon" class="h-3.5 w-3.5" [hidden]="theme.theme() !== 'dark'"></lucide-icon>
+        <lucide-icon name="droplet" class="h-3.5 w-3.5" [hidden]="theme.theme() !== 'blue'"></lucide-icon>
       </button>
       <button (click)="authService.logout()" class="text-zinc-500 hover:text-white transition-colors p-1 rounded hover:bg-zinc-900 animate-fade-in shrink-0" title="Cerrar sesión" aria-label="Cerrar sesión">
         <lucide-icon name="log-out" class="h-3.5 w-3.5"></lucide-icon>

@@ -7,6 +7,7 @@ import { roleBadgeClasses } from '../../core/utils/role-style';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { ProjectService } from '../../core/services/project.service';
 import { ChatService } from '../../core/services/chat.service';
+import { PresenceService } from '../../core/services/presence.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { ToastService } from '../../core/services/toast.service';
 
@@ -21,6 +22,7 @@ export class SidebarComponent implements OnInit {
   public subscriptionService = inject(SubscriptionService);
   public projectService = inject(ProjectService);
   public chatService = inject(ChatService);
+  readonly presence = inject(PresenceService);
   public theme = inject(ThemeService);
   private toast = inject(ToastService);
 

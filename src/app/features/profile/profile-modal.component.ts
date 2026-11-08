@@ -2,11 +2,13 @@ import { ChangeDetectionStrategy, Component, computed, inject, output, signal } 
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { ProfileUpdateRequest, SubscriptionTier } from '../../core/models';
+import { ProfileUpdateRequest, SubscriptionTier, PresenceStatus } from '../../core/models';
 import { AuthService } from '../../core/services/auth.service';
+import { PresenceService } from '../../core/services/presence.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { ToastService } from '../../core/services/toast.service';
 import { FocusTrapDirective } from '../../shared/directives/focus-trap.directive';
+import { orderedPresenceStatuses } from '../../core/utils/presence.utils';
 
 @Component({
   selector: 'app-profile-modal',
@@ -46,6 +48,32 @@ import { FocusTrapDirective } from '../../shared/directives/focus-trap.directive
             </div>
             <span class="shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wider text-zinc-400">{{ tierLabel() }}</span>
           </div>
+
+          <!-- Estado de presencia (siempre visible, para todos los planes). -->
+          <section class="space-y-2 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs font-medium text-zinc-300">Estado de presencia</p>
+                <p class="text-[10px] text-zinc-500">Cómo te ven tus compañerxs en el chat y el directorio.</p>
+              </div>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/10 bg-white/[0.05] text-[10px] font-medium text-zinc-200">
+                <span class="h-2 w-2 rounded-full" [class]="presence.color(auth.currentUser()?.id ?? null)"></span>
+                {{ presence.label(auth.currentUser()?.id ?? null) || 'Disponible' }}
+              </span>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-2">
+              @for (status of statuses; track status) {
+                <button type="button" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-zinc-300 hover:bg-white/10 hover:text-white transition-colors"
+                        (click)="setPresence(status)">
+                  <span class="h-2 w-2 rounded-full shrink-0" [class]="presence.statusColor(status)"></span>
+                  {{ presence.statusLabel(status) }}
+                  @if (presence.myStatus() === status) {
+                    <span class="ml-auto text-[10px] text-zinc-500">Actual</span>
+                  }
+                </button>
+              }
+            </div>
+          </section>
 
           <label for="profileFullName" class="block text-xs font-medium text-zinc-300">Nombre visible
             <input id="profileFullName" name="fullName" [(ngModel)]="fullName" class="premium-control mt-2 w-full"
@@ -149,7 +177,9 @@ export class ProfileModalComponent {
   readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly subscriptions = inject(SubscriptionService);
+  readonly presence = inject(PresenceService);
   readonly tier = computed(() => this.subscriptions.tier());
+  readonly statuses = orderedPresenceStatuses();
   fullName = this.auth.currentUser()?.fullName || this.auth.currentUser()?.name || '';
   avatarData = this.auth.currentUser()?.avatarData || '';
   timezone = this.auth.currentUser()?.timezone || 'America/Bogota';
@@ -189,6 +219,13 @@ export class ProfileModalComponent {
     };
     reader.onerror = () => this.errorMessage.set('No se pudo leer la imagen seleccionada.');
     reader.readAsDataURL(file);
+  }
+
+  setPresence(status: string): void {
+    this.presence.setStatus(status as PresenceStatus).subscribe({
+      next: () => this.toast.success('Estado actualizado.'),
+      error: () => this.toast.error('No se pudo actualizar tu estado.')
+    });
   }
 
   save(): void {

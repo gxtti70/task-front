@@ -140,14 +140,25 @@
 
     @if (chat.activeChannel(); as channel) {
       <header class="flex items-center justify-between border-b border-zinc-900/70 px-4 py-3">
-        <h2 class="flex items-center gap-2 truncate text-sm font-semibold text-zinc-100">
-          @if (channel.projectId !== null) {
-            <lucide-icon name="hash" class="h-4 w-4 text-zinc-500"></lucide-icon>
-          } @else {
-            <lucide-icon name="message-circle" class="h-4 w-4 text-sky-300"></lucide-icon>
+        <div class="flex items-center gap-2 truncate min-w-0">
+          <h2 class="flex items-center gap-2 truncate text-sm font-semibold text-zinc-100">
+            @if (channel.projectId !== null) {
+              <lucide-icon name="hash" class="h-4 w-4 text-zinc-500"></lucide-icon>
+            } @else {
+              <lucide-icon name="message-circle" class="h-4 w-4 text-sky-300"></lucide-icon>
+            }
+            {{ channelLabel(channel) }}
+          </h2>
+          @if (channel.projectId === null && channel.otherUserId) {
+            <span class="flex items-center gap-1.5">
+              <span class="h-2 w-2 rounded-full border-2 border-zinc-950"
+                    [class]="presence.color(channel.otherUserId)"></span>
+              <span class="text-[10px] font-medium" [class]="presence.color(channel.otherUserId) === 'bg-green-400' ? 'text-green-400' : 'text-zinc-400'">
+                {{ presence.label(channel.otherUserId) }}
+              </span>
+            </span>
           }
-          {{ channelLabel(channel) }}
-        </h2>
+        </div>
         <span class="text-[10px] uppercase tracking-wider text-zinc-600">
           {{ channel.projectId !== null ? 'Sala de proyecto' : 'Mensaje directo' }}
         </span>
@@ -167,8 +178,12 @@
           @if (item.type === 'image-grid') {
             <article class="chat-message-row flex items-end gap-2" [ngClass]="item.messages[0].authorId === currentUserId() ? 'justify-end' : ''">
               @if (item.messages[0].authorId !== currentUserId()) {
-                <span aria-hidden="true" class="chat-message-avatar flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold">
-                  {{ initialsOf(item.messages[0].authorName) }}
+                <span class="relative" aria-hidden="true">
+                  <span class="chat-message-avatar flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold">
+                    {{ initialsOf(item.messages[0].authorName) }}
+                  </span>
+                  <span class="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-zinc-950"
+                        [class]="presence.color(item.messages[0].authorId)"></span>
                 </span>
               }
               <div class="chat-message-content min-w-0 max-w-[86%] sm:max-w-[75%]">
@@ -197,8 +212,12 @@
             @let message = item.message;
             <article class="chat-message-row flex items-end gap-2" [ngClass]="message.authorId === currentUserId() ? 'justify-end' : ''">
               @if (message.authorId !== currentUserId()) {
-                <span aria-hidden="true" class="chat-message-avatar mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold">
-                  {{ initialsOf(message.authorName) }}
+                <span class="relative" aria-hidden="true">
+                  <span class="chat-message-avatar mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold">
+                    {{ initialsOf(message.authorName) }}
+                  </span>
+                  <span class="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-zinc-950"
+                        [class]="presence.color(message.authorId)"></span>
                 </span>
               }
               <div class="chat-message-content min-w-0 max-w-[86%] sm:max-w-[75%]">
@@ -387,9 +406,12 @@
               <li>
                 <button type="button" class="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm text-zinc-300 transition-colors hover:bg-zinc-900/60"
                         (click)="openDirectDiscussion(user)">
-                  <span aria-hidden="true"
-                        class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-[10px] font-semibold text-zinc-200">
-                    {{ initialsOf(user.fullName ?? user.email) }}
+                  <span class="relative" aria-hidden="true">
+                    <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-[10px] font-semibold text-zinc-200">
+                      {{ initialsOf(user.fullName ?? user.email) }}
+                    </span>
+                    <span class="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-zinc-950"
+                          [class]="presence.color(user.id ?? null)"></span>
                   </span>
                   <span class="min-w-0 flex-1 truncate">{{ user.fullName || user.email }}</span>
                   <span class="truncate text-[11px] text-zinc-500">{{ user.email }}</span>

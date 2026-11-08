@@ -4,12 +4,14 @@ import { Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { NotificationItem } from '../../core/models';
 import { NotificationService } from '../../core/services/notification.service';
+import { PresenceService } from '../../core/services/presence.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ProfileModalComponent } from '../profile/profile-modal.component';
 import { TaskService } from '../../core/services/task.service';
-import { Task } from '../../core/models';
+import { Task, PresenceStatus } from '../../core/models';
 import { FocusTrapDirective } from '../../shared/directives/focus-trap.directive';
+import { presenceLabel, presenceDotColor, manualPresenceStatuses } from '../../core/utils/presence.utils';
 
 @Component({
   selector: 'app-topbar',
@@ -23,12 +25,15 @@ export class TopbarComponent implements OnInit, OnDestroy {
   private toast = inject(ToastService);
   readonly router = inject(Router);
   private taskService = inject(TaskService);
+  readonly presence = inject(PresenceService);
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
   private hasLoadedNotifications = false;
 
   isSearchOpen = signal(false);
   isNotificationsOpen = signal(false);
   isProfileOpen = signal(false);
+  isPresenceOpen = signal(false);
+  readonly manualStatuses = manualPresenceStatuses();
   /** Emitted when the mobile hamburger is pressed; the shell owns the drawer state. */
   readonly menuToggle = output<void>();
   isNotificationsLoading = signal(false);
@@ -50,10 +55,12 @@ export class TopbarComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadNotifications();
     this.refreshTimer = setInterval(() => this.loadNotifications(), 30_000);
+    this.presence.start();
   }
 
   ngOnDestroy(): void {
     if (this.refreshTimer) clearInterval(this.refreshTimer);
+    this.presence.stop();
   }
 
   loadNotifications(): void {
@@ -133,6 +140,18 @@ export class TopbarComponent implements OnInit, OnDestroy {
       next: () => this.notifications.update(items => items.map(item => ({ ...item, read: true }))),
       error: err => this.toast.errorFor(err, 'No se pudieron marcar las notificaciones como leídas.')
     });
+  }
+
+  setPresence(status: string): void {
+    this.presence.setStatus(status as PresenceStatus).subscribe({
+      next: () => { this.isPresenceOpen.set(false); this.toast.success('Estado actualizado.'); },
+      error: () => this.toast.error('No se pudo actualizar tu estado.')
+    });
+  }
+
+  togglePresenceMenu(): void {
+    this.isPresenceOpen.update(v => !v);
+    if (this.isPresenceOpen()) this.isNotificationsOpen.set(false);
   }
 
   openNotification(notification: NotificationItem): void {

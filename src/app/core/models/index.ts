@@ -11,6 +11,16 @@ export interface User {
   jobTitle?: string | null;
   bio?: string | null;
   accentColor?: string | null;
+  presenceStatus?: PresenceStatus;
+  lastSeenAt?: string | null;
+}
+
+export type PresenceStatus = 'AVAILABLE' | 'BUSY' | 'DO_NOT_DISTURB' | 'BE_RIGHT_BACK' | 'AWAY' | 'OUT_OF_OFFICE' | 'APPEAR_OFFLINE' | 'OFFLINE';
+
+export interface PresenceEntry {
+  userId: string;
+  status: PresenceStatus;
+  lastSeenAt: string | null;
 }
 
 export interface ProfileUpdateRequest {

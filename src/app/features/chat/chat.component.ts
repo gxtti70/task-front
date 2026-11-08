@@ -6,6 +6,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LucideAngularModule } from 'lucide-angular';
 import { Channel, ChatMessage, Project, User } from '../../core/models';
 import { ChatService } from '../../core/services/chat.service';
+import { PresenceService } from '../../core/services/presence.service';
 import { PushNotificationService } from '../../core/services/push-notification.service';
 import { TypingIndicatorComponent } from './typing-indicator.component';
 import { AuthService } from '../../core/services/auth.service';
@@ -27,6 +28,7 @@ type ChatDisplayItem =
 })
 export class ChatComponent implements OnInit {
   readonly chat = inject(ChatService);
+  readonly presence = inject(PresenceService);
   private readonly route = inject(ActivatedRoute);
   readonly push = inject(PushNotificationService);
   private readonly auth = inject(AuthService);
