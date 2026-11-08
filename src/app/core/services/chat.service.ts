@@ -186,11 +186,18 @@ export class ChatService {
     return !this.hasMoreMessages();
   }
 
+  /** Marca como entregados todos los canales del usuario (el backend throttle a 30 s). */
+  markDelivered(): void {
+    this.http.post(`${this.url}/deliver`, null).subscribe({
+      error: () => { /* fallos transitorios se ignoran */ }
+    });
+  }
+
   private fetchLatestMessages(channelId: string): void {
     const token = ++this.fetchToken;
     this.loadingMessages.set(true);
     this.http.get<ChatMessage[]>(`${this.url}/${channelId}/messages`, {
-      params: { limit: this.messagePageSize }
+      params: { limit: this.messagePageSize, deliver: 'true' }
     }).subscribe({
       next: latest => {
         this.loadingMessages.set(false);

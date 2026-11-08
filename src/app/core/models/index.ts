@@ -109,6 +109,12 @@ export interface ChatMessage {
   fileContentType?: string | null;
   fileSizeBytes?: number | null;
   downloadUrl?: string | null;
+  /** Número de destinatarios que recibieron el mensaje (excluye al autor). */
+  deliveredCount?: number;
+  /** Número de destinatarios que leyeron el mensaje (excluye al autor). */
+  readCount?: number;
+  /** Total de destinatarios (miembros del canal menos el autor). */
+  recipientCount?: number;
 }
 
 export interface Project {

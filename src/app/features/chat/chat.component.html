@@ -190,6 +190,14 @@
                 <p class="chat-message-meta text-[10px]" [ngClass]="item.messages[0].authorId === currentUserId() ? 'text-right' : ''">
                   {{ item.messages[0].authorName }} · {{ item.messages[0].createdAt | date:'shortTime' }}
                 </p>
+                @let state = receiptState(item.messages[0]);
+                @if (item.messages[0].authorId === currentUserId()) {
+                  <span class="chat-message-receipt text-[10px] mt-0.5"
+                        [ngClass]="state === 'READ' ? 'text-blue-500' : state === 'DELIVERED' ? 'text-zinc-400' : 'text-zinc-500'"
+                        [attr.title]="receiptTitle(item.messages[0])">
+                    <lucide-icon [name]="state === 'SENT' ? 'check' : 'check-check'" class="h-3 w-3"></lucide-icon>
+                  </span>
+                }
                 <div class="chat-image-grid mt-1">
                   @for (image of item.messages; track image.id) {
                     <div class="chat-image-grid-tile">
@@ -224,6 +232,14 @@
                 <p class="chat-message-meta text-[10px]" [ngClass]="message.authorId === currentUserId() ? 'text-right' : ''">
                   {{ message.authorName }} · {{ message.createdAt | date:'shortTime' }}
                 </p>
+                @let state = receiptState(message);
+                @if (message.authorId === currentUserId()) {
+                  <span class="chat-message-receipt text-[10px] mt-0.5"
+                        [ngClass]="state === 'READ' ? 'text-blue-500' : state === 'DELIVERED' ? 'text-zinc-400' : 'text-zinc-500'"
+                        [attr.title]="receiptTitle(message)">
+                    <lucide-icon [name]="state === 'SENT' ? 'check' : 'check-check'" class="h-3 w-3"></lucide-icon>
+                  </span>
+                }
                 @if (isImageMessage(message)) {
                   <figure class="chat-image-card mt-1">
                     <button type="button" class="chat-image-card-open" (click)="openImage(message)"

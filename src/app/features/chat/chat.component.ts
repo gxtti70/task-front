@@ -232,6 +232,28 @@ export class ChatComponent implements OnInit {
     return message.messageType === 'FILE' && !!message.fileContentType?.startsWith('image/') && !!message.downloadUrl;
   }
 
+  /** Estado del recibo para un mensaje propio: 'READ' | 'DELIVERED' | 'SENT'. */
+  receiptState(message: ChatMessage): 'READ' | 'DELIVERED' | 'SENT' {
+    if (message.authorId !== this.currentUserId()) return 'SENT';
+    const read = message.readCount ?? 0;
+    const delivered = message.deliveredCount ?? 0;
+    const recipients = message.recipientCount ?? 0;
+    if (recipients > 0 && read === recipients) return 'READ';
+    if (delivered > 0) return 'DELIVERED';
+    return 'SENT';
+  }
+
+  /** Tooltip en español para el tick de recibo de un mensaje propio. */
+  receiptTitle(message: ChatMessage): string {
+    if (message.authorId !== this.currentUserId()) return '';
+    const read = message.readCount ?? 0;
+    const delivered = message.deliveredCount ?? 0;
+    const recipients = message.recipientCount ?? 0;
+    if (recipients === 0) return 'Enviado';
+    if (read === recipients) return `Visto por ${read} de ${recipients}`;
+    return `Entregado a ${delivered} de ${recipients}`;
+  }
+
   openImage(message: ChatMessage): void {
     const index = this.imageMessages().findIndex(image => image.id === message.id);
     if (index >= 0) this.lightboxIndex.set(index);

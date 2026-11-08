@@ -37,7 +37,7 @@ describe('ChatService', () => {
   it('abre un canal con la página más reciente en orden ascendente', () => {
     service.openChannel('c-room');
     expect(service.activeChannelId()).toBe('c-room');
-    const req = http.expectOne('/api/channels/c-room/messages?limit=50');
+    const req = http.expectOne('/api/channels/c-room/messages?limit=50&deliver=true');
     expect(req.request.method).toBe('GET');
     // El backend responde en orden descendente; el servicio debe ordenarlo ascendente.
     req.flush([message('m3', '2026-01-01T00:02:00Z'), message('m1', '2026-01-01T00:00:00Z')]);
@@ -49,14 +49,14 @@ describe('ChatService', () => {
   it('marca paginación adicional cuando la página completa regresó llena', () => {
     service.openChannel('c-room');
     const full = Array.from({ length: 50 }, (_, index) => message(`m-${index}`, `2026-01-01T00:${String(index).padStart(2, '0')}:00Z`));
-    http.expectOne('/api/channels/c-room/messages?limit=50').flush(full);
+    http.expectOne('/api/channels/c-room/messages?limit=50&deliver=true').flush(full);
     expect(service.hasMoreMessages()).toBe(true);
     service.messages.set([]);
   });
 
   it('envía mensajes recortados y los fusiona sin duplicar', () => {
     service.openChannel('c-room');
-    http.expectOne('/api/channels/c-room/messages?limit=50').flush([message('m1', '2026-01-01T00:00:00Z')]);
+    http.expectOne('/api/channels/c-room/messages?limit=50&deliver=true').flush([message('m1', '2026-01-01T00:00:00Z')]);
     service.send('  hola mundo  ');
     const req = http.expectOne('/api/channels/c-room/messages');
     expect(req.request.body).toEqual({ body: 'hola mundo' });
@@ -68,16 +68,16 @@ describe('ChatService', () => {
     // Un sondeo posterior devuelve el mismo mensaje otra vez: no debe duplicarse.
     service.pollWhenVisible();
     http.expectOne('/api/channels').flush([]);
-    http.expectOne('/api/channels/c-room/messages?limit=50').flush([message('m2', '2026-01-01T00:01:00Z', 'hola mundo')]);
+    http.expectOne('/api/channels/c-room/messages?limit=50&deliver=true').flush([message('m2', '2026-01-01T00:01:00Z', 'hola mundo')]);
     expect(service.messages().map(m => m.id)).toEqual(['m1', 'm2']);
     service.messages.set([]);
   });
 
   it('descarta la respuesta de un canal ya abandonado', () => {
     service.openChannel('c-dm');
-    const dmRequest = http.expectOne('/api/channels/c-dm/messages?limit=50');
+    const dmRequest = http.expectOne('/api/channels/c-dm/messages?limit=50&deliver=true');
     service.openChannel('c-room');
-    const roomRequest = http.expectOne('/api/channels/c-room/messages?limit=50');
+    const roomRequest = http.expectOne('/api/channels/c-room/messages?limit=50&deliver=true');
     roomRequest.flush([message('r1', '2026-01-01T00:05:00Z')]);
     dmRequest.flush([message('d1', '2026-01-01T00:04:00Z')]);
     expect(service.messages().map(m => m.id)).toEqual(['r1']);
@@ -88,7 +88,7 @@ describe('ChatService', () => {
     let firstMessages: ChatMessage[] = [];
     service.openChannel('c-room');
     const full = Array.from({ length: 50 }, (_, index) => message(`m-${index}`, `2026-01-01T00:${String(index).padStart(2, '0')}:00Z`));
-    http.expectOne('/api/channels/c-room/messages?limit=50').flush(full.slice().reverse());
+    http.expectOne('/api/channels/c-room/messages?limit=50&deliver=true').flush(full.slice().reverse());
     firstMessages = service.messages();
     expect(firstMessages.at(0)?.id).toBe('m-0');
 
@@ -127,6 +127,6 @@ describe('ChatService', () => {
     expect(result).toBe(existing);
     expect(service.channels()).toContain(existing);
     expect(service.activeChannelId()).toBe('c-dm');
-    http.expectOne('/api/channels/c-dm/messages?limit=50').flush([]);
+    http.expectOne('/api/channels/c-dm/messages?limit=50&deliver=true').flush([]);
   });
 });

@@ -149,6 +149,7 @@ export class MessageNotificationViewportComponent {
 
   private pollForNewMessages(): void {
     if (document.visibilityState !== 'visible' || !this.auth.isAuthenticated() || !this.hasUnreadBaseline) return;
+    this.chat.markDelivered();
     this.chat.refreshUnreadCounts().subscribe({
       next: counts => {
         const previous = this.previousUnreadCounts;
