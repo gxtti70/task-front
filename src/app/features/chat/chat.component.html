@@ -166,32 +166,40 @@
 
       <app-typing-indicator />
 
-      <div #messagesScroller (scroll)="onScroll($event)" class="chat-messages-list min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4" aria-label="Mensajes">
+      <div #messagesScroller (scroll)="onScroll($event)" class="chat-messages-list min-h-0 flex-1 overflow-y-auto px-4 py-4" aria-label="Mensajes">
         @if (chat.loadingMessages() && !chat.messages().length) {
           @for (line of [1, 2, 3]; track line) {
-            <app-skeleton skeletonClass="h-10 w-3/4"></app-skeleton>
+            <app-skeleton class="mt-3" skeletonClass="h-10 w-3/4"></app-skeleton>
           }
         } @else if (!chat.messages().length) {
           <p class="pt-10 text-center text-xs text-zinc-600">Aún no hay mensajes. Estrena la conversación…</p>
         }
         @for (item of displayItems(); track item.id) {
           @if (item.type === 'image-grid') {
-            <article class="chat-message-row flex items-end gap-2" [ngClass]="item.messages[0].authorId === currentUserId() ? 'justify-end' : ''">
+            <article class="chat-message-row group flex items-end gap-2"
+                     [ngClass]="[item.messages[0].authorId === currentUserId() ? 'justify-end' : '', item.startsGroup ? 'mt-3' : 'mt-1']"
+                     [attr.aria-label]="item.showMeta ? null : item.messages[0].authorName + ' · ' + (item.messages[0].createdAt | date:'shortTime')">
               @if (item.messages[0].authorId !== currentUserId()) {
-                <span class="relative" aria-hidden="true">
-                  <span class="chat-message-avatar flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold">
-                    {{ initialsOf(item.messages[0].authorName) }}
+                @if (item.showAvatar) {
+                  <span class="relative" aria-hidden="true">
+                    <span class="chat-message-avatar flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold">
+                      {{ initialsOf(item.messages[0].authorName) }}
+                    </span>
+                    <span class="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-zinc-950"
+                          [class]="presence.color(item.messages[0].authorId)"></span>
                   </span>
-                  <span class="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-zinc-950"
-                        [class]="presence.color(item.messages[0].authorId)"></span>
-                </span>
+                } @else {
+                  <span class="w-7 shrink-0" aria-hidden="true"></span>
+                }
               }
               <div class="chat-message-content min-w-0 max-w-[86%] sm:max-w-[75%]">
-                <p class="chat-message-meta text-[10px]" [ngClass]="item.messages[0].authorId === currentUserId() ? 'text-right' : ''">
-                  {{ item.messages[0].authorName }} · {{ item.messages[0].createdAt | date:'shortTime' }}
-                </p>
+                @if (item.showMeta) {
+                  <p class="chat-message-meta text-[10px]" [ngClass]="item.messages[0].authorId === currentUserId() ? 'text-right' : ''">
+                    {{ item.messages[0].authorName }} · {{ item.messages[0].createdAt | date:'shortTime' }}
+                  </p>
+                }
                 @let state = receiptState(item.messages[0]);
-                @if (item.messages[0].authorId === currentUserId()) {
+                @if (item.messages[0].authorId === currentUserId() && item.endsGroup) {
                   <span class="chat-message-receipt text-[10px] mt-0.5"
                         [ngClass]="state === 'READ' ? 'text-blue-500' : state === 'DELIVERED' ? 'text-zinc-400' : 'text-zinc-500'"
                         [attr.title]="receiptTitle(item.messages[0])">
@@ -218,22 +226,30 @@
             </article>
           } @else {
             @let message = item.message;
-            <article class="chat-message-row flex items-end gap-2" [ngClass]="message.authorId === currentUserId() ? 'justify-end' : ''">
+            <article class="chat-message-row group flex items-end gap-2"
+                     [ngClass]="[message.authorId === currentUserId() ? 'justify-end' : '', item.startsGroup ? 'mt-3' : 'mt-1']"
+                     [attr.aria-label]="item.showMeta ? null : message.authorName + ' · ' + (message.createdAt | date:'shortTime')">
               @if (message.authorId !== currentUserId()) {
-                <span class="relative" aria-hidden="true">
-                  <span class="chat-message-avatar mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold">
-                    {{ initialsOf(message.authorName) }}
+                @if (item.showAvatar) {
+                  <span class="relative" aria-hidden="true">
+                    <span class="chat-message-avatar mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold">
+                      {{ initialsOf(message.authorName) }}
+                    </span>
+                    <span class="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-zinc-950"
+                          [class]="presence.color(message.authorId)"></span>
                   </span>
-                  <span class="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-zinc-950"
-                        [class]="presence.color(message.authorId)"></span>
-                </span>
+                } @else {
+                  <span class="w-7 shrink-0" aria-hidden="true"></span>
+                }
               }
               <div class="chat-message-content min-w-0 max-w-[86%] sm:max-w-[75%]">
-                <p class="chat-message-meta text-[10px]" [ngClass]="message.authorId === currentUserId() ? 'text-right' : ''">
-                  {{ message.authorName }} · {{ message.createdAt | date:'shortTime' }}
-                </p>
+                @if (item.showMeta) {
+                  <p class="chat-message-meta text-[10px]" [ngClass]="message.authorId === currentUserId() ? 'text-right' : ''">
+                    {{ message.authorName }} · {{ message.createdAt | date:'shortTime' }}
+                  </p>
+                }
                 @let state = receiptState(message);
-                @if (message.authorId === currentUserId()) {
+                @if (message.authorId === currentUserId() && item.endsGroup) {
                   <span class="chat-message-receipt text-[10px] mt-0.5"
                         [ngClass]="state === 'READ' ? 'text-blue-500' : state === 'DELIVERED' ? 'text-zinc-400' : 'text-zinc-500'"
                         [attr.title]="receiptTitle(message)">
@@ -261,8 +277,15 @@
                   }
                 } @else if (message.messageType !== 'FILE' || message.body) {
                   <p class="chat-message-bubble mt-1 whitespace-pre-line rounded-2xl border px-3.5 py-2.5 text-sm leading-relaxed"
-                     [ngClass]="message.authorId === currentUserId() ? 'is-mine rounded-br-md' : 'is-other rounded-bl-md'">
-                    {{ message.body }}
+                     [ngClass]="{
+                       'is-mine': message.authorId === currentUserId(),
+                       'is-other': message.authorId !== currentUserId(),
+                       'rounded-br-md': message.authorId === currentUserId() && item.endsGroup,
+                       'rounded-bl-md': message.authorId !== currentUserId() && item.endsGroup
+                     }">
+                    {{ message.body }}@if (!item.showMeta) {
+                      <span class="chat-message-time" aria-hidden="true">{{ message.createdAt | date:'shortTime' }}</span>
+                    }
                   </p>
                 }
                 @if (message.messageType === 'FILE' && !isImageMessage(message)) {
@@ -289,7 +312,7 @@
           }
         }
         @if (chat.loadingOlderMessages()) {
-          <p class="text-center text-[11px] text-zinc-600">Cargando mensajes anteriores…</p>
+          <p class="mt-3 text-center text-[11px] text-zinc-600">Cargando mensajes anteriores…</p>
         }
       </div>
 

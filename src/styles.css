@@ -721,6 +721,26 @@ html.light .chat-message-avatar { border-color: #d8dce8; background: #e2e6f0; co
 html.blue .chat-message-bubble.is-mine { border-color: #38bdf8; background: #38bdf8; color: #04122b; }
 html.blue .chat-message-bubble.is-other { border-color: #2a4274; background: #16264a; color: #eaf1ff; }
 html.blue .chat-message-avatar { border-color: #2a4274; background: #16264a; color: #bccbea; }
+.chat-message-time {
+  margin-left: .5rem;
+  font-size: .625rem;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+.chat-message-row:hover .chat-message-time,
+.chat-message-row:focus-within .chat-message-time { opacity: .9; }
+.chat-message-bubble.is-mine .chat-message-time { color: rgb(255 255 255 / 82%); }
+.chat-message-bubble.is-other .chat-message-time { color: #a6b1c4; }
+html.light .chat-message-bubble.is-other .chat-message-time { color: #69718b; }
+html.blue .chat-message-bubble.is-other .chat-message-time { color: #a8bede; }
+@media (hover: none) {
+  .chat-message-time { opacity: .9; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-message-time { transition: none; }
+}
 .chat-push-toggle {
   position: relative;
   display: flex;

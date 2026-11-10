@@ -15,10 +15,7 @@ import { UserDirectoryService } from '../../core/services/user-directory.service
 import { ToastService } from '../../core/services/toast.service';
 import { FocusTrapDirective } from '../../shared/directives/focus-trap.directive';
 import { SkeletonComponent } from '../../shared/ui/skeleton.component';
-
-type ChatDisplayItem =
-  | { type: 'message'; id: string; message: ChatMessage }
-  | { type: 'image-grid'; id: string; messages: ChatMessage[] };
+import { ChatDisplayItem, buildChatDisplayItems, isImageMessage as isChatImageMessage } from './chat-grouping';
 
 @Component({
   selector: 'app-chat',
@@ -56,29 +53,7 @@ export class ChatComponent implements OnInit {
   readonly imageMessages = computed(() => this.chat.messages().filter(message => this.isImageMessage(message)));
   readonly lightboxIndex = signal(-1);
   readonly lightboxImage = computed(() => this.imageMessages()[this.lightboxIndex()] ?? null);
-  readonly displayItems = computed<ChatDisplayItem[]>(() => {
-    const messages = this.chat.messages();
-    const items: ChatDisplayItem[] = [];
-    for (let index = 0; index < messages.length;) {
-      const message = messages[index];
-      if (this.isImageMessage(message)) {
-        const group = [message];
-        let next = index + 1;
-        while (next < messages.length && group.length < 4
-          && this.isImageMessage(messages[next])
-          && messages[next].authorId === message.authorId) {
-          group.push(messages[next++]);
-        }
-        if (group.length > 1) items.push({ type: 'image-grid', id: message.id, messages: group });
-        else items.push({ type: 'message', id: message.id, message });
-        index = next;
-        continue;
-      }
-      items.push({ type: 'message', id: message.id, message });
-      index++;
-    }
-    return items;
-  });
+  readonly displayItems = computed<ChatDisplayItem[]>(() => buildChatDisplayItems(this.chat.messages()));
 
   readonly projectList = signal<Project[]>([]);
   readonly userList = signal<User[]>([]);
@@ -229,7 +204,7 @@ export class ChatComponent implements OnInit {
   }
 
   isImageMessage(message: ChatMessage): boolean {
-    return message.messageType === 'FILE' && !!message.fileContentType?.startsWith('image/') && !!message.downloadUrl;
+    return isChatImageMessage(message);
   }
 
   /** Estado del recibo para un mensaje propio: 'READ' | 'DELIVERED' | 'SENT'. */
