@@ -710,7 +710,8 @@ html.blue .message-notification-open { color: #7dd3fc; }
 /* Burbujas de conversación y layout móvil bloqueado al área visible. */
 .chat-message-meta { margin: 0 .35rem; color: #8f9ab0; }
 .chat-message-receipt { margin: 0 .25rem; display: inline-block; vertical-align: middle; }
-.chat-message-bubble { overflow-wrap: anywhere; box-shadow: 0 2px 6px rgb(0 0 0 / 10%); }
+.chat-message-content { min-width: 0; max-width: 75%; overflow-wrap: anywhere; }
+.chat-message-bubble { max-width: 100%; overflow-wrap: anywhere; word-break: break-word; box-shadow: 0 2px 6px rgb(0 0 0 / 10%); }
 .chat-message-bubble.is-mine { border-color: #4f46e5; background: #4f46e5; color: #fff; }
 .chat-message-bubble.is-other { border-color: #343b4a; background: #202635; color: #e6eaf2; }
 .chat-message-avatar { border: 1px solid #3b4352; background: #272f3e; color: #d8dfed; }

@@ -20,12 +20,18 @@ function messageOf(id: string, body: string, authorId: string): object {
   };
 }
 
+const longMessage = `sd${'f'.repeat(220)}`;
+
 let nextMessageId = 100;
 
 async function mockApplication(page: Page): Promise<void> {
   const messageStore = new Map<string, object[]>([
     ['c-room', [messageOf('m-1', 'Bienvenida a la sala', 'user-2')]],
-    ['c-dm', [messageOf('m-2', '¿Cómo va la tarea?', 'user-2'), messageOf('m-3', 'Bien, casi lista', 'user-1')]]
+    ['c-dm', [
+      messageOf('m-2', '¿Cómo va la tarea?', 'user-2'),
+      messageOf('m-3', 'Bien, casi lista', 'user-1'),
+      messageOf('m-long', longMessage, 'user-1')
+    ]]
   ]);
   const channels = [room, direct];
 
@@ -108,6 +114,27 @@ test('el chat lista canales, abre un DM y envía mensajes', async ({ page }) => 
   await page.getByRole('textbox', { name: 'Escribe un mensaje' }).fill('Ya quedó');
   await page.getByRole('button', { name: 'Enviar mensaje' }).click();
   await expect(page.getByText('Ya quedó')).toBeVisible();
+});
+
+test('los mensajes largos sin espacios no desbordan la columna', async ({ page }) => {
+  await mockApplication(page);
+  await page.goto('/dashboard/chat');
+  await page.getByRole('button', { name: 'Ana Directa' }).click();
+
+  const list = page.locator('.chat-messages-list');
+  const bubble = page.locator('.chat-message-bubble.is-mine').filter({ hasText: 'sdffff' });
+  await expect(bubble).toBeVisible();
+
+  const listBox = await list.boundingBox();
+  const bubbleBox = await bubble.boundingBox();
+  expect(listBox).not.toBeNull();
+  expect(bubbleBox).not.toBeNull();
+  if (!listBox || !bubbleBox) return;
+
+  expect(bubbleBox.width).toBeLessThanOrEqual(listBox.width * 0.75 + 1);
+  expect(await list.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+  // Una sola línea mediría ~40px; varias líneas confirman que la cadena se partió.
+  expect(bubbleBox.height).toBeGreaterThan(60);
 });
 
 test('crear una sala de proyecto desde el diálogo la deja activa', async ({ page }) => {

@@ -176,7 +176,7 @@
         }
         @for (item of displayItems(); track item.id) {
           @if (item.type === 'image-grid') {
-            <article class="chat-message-row group flex items-end gap-2"
+            <article class="chat-message-row group flex min-w-0 items-end gap-2"
                      [ngClass]="[item.messages[0].authorId === currentUserId() ? 'justify-end' : '', item.startsGroup ? 'mt-3' : 'mt-1']"
                      [attr.aria-label]="item.showMeta ? null : item.messages[0].authorName + ' · ' + (item.messages[0].createdAt | date:'shortTime')">
               @if (item.messages[0].authorId !== currentUserId()) {
@@ -192,7 +192,7 @@
                   <span class="w-7 shrink-0" aria-hidden="true"></span>
                 }
               }
-              <div class="chat-message-content min-w-0 max-w-[86%] sm:max-w-[75%]">
+              <div class="chat-message-content">
                 @if (item.showMeta) {
                   <p class="chat-message-meta text-[10px]" [ngClass]="item.messages[0].authorId === currentUserId() ? 'text-right' : ''">
                     {{ item.messages[0].authorName }} · {{ item.messages[0].createdAt | date:'shortTime' }}
@@ -226,7 +226,7 @@
             </article>
           } @else {
             @let message = item.message;
-            <article class="chat-message-row group flex items-end gap-2"
+            <article class="chat-message-row group flex min-w-0 items-end gap-2"
                      [ngClass]="[message.authorId === currentUserId() ? 'justify-end' : '', item.startsGroup ? 'mt-3' : 'mt-1']"
                      [attr.aria-label]="item.showMeta ? null : message.authorName + ' · ' + (message.createdAt | date:'shortTime')">
               @if (message.authorId !== currentUserId()) {
@@ -242,7 +242,7 @@
                   <span class="w-7 shrink-0" aria-hidden="true"></span>
                 }
               }
-              <div class="chat-message-content min-w-0 max-w-[86%] sm:max-w-[75%]">
+              <div class="chat-message-content">
                 @if (item.showMeta) {
                   <p class="chat-message-meta text-[10px]" [ngClass]="message.authorId === currentUserId() ? 'text-right' : ''">
                     {{ message.authorName }} · {{ message.createdAt | date:'shortTime' }}
