@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminUser, UserRole } from '../../core/models';
 import { AdminUserService } from '../../core/services/admin-user.service';
+import { PresenceService } from '../../core/services/presence.service';
 import { ToastService } from '../../core/services/toast.service';
 import { roleBadgeClasses } from '../../core/utils/role-style';
 
@@ -15,6 +16,7 @@ import { roleBadgeClasses } from '../../core/utils/role-style';
 export class UsersComponent implements OnInit {
   private userService = inject(AdminUserService);
   private toast = inject(ToastService);
+  private readonly presence = inject(PresenceService);
   users = signal<AdminUser[]>([]);
   isLoading = signal(true);
   isSaving = signal(false);
@@ -73,5 +75,16 @@ export class UsersComponent implements OnInit {
         this.updatingUserId.set(null);
       }
     });
+  }
+
+  /** Texto de la última conexión conocida del usuario. */
+  lastSeenLabel(user: AdminUser): string {
+    const relative = this.presence.lastSeenText(user.lastSeenAt);
+    return relative ? `Última conexión: ${relative}` : 'Nunca se ha conectado';
+  }
+
+  /** Fecha y hora exactas de la última conexión (tooltip). */
+  lastSeenTitle(user: AdminUser): string {
+    return this.presence.lastSeenTitle(user.lastSeenAt);
   }
 }

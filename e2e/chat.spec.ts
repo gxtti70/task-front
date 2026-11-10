@@ -57,6 +57,12 @@ async function mockApplication(page: Page): Promise<void> {
       body = { tier: 'FREE', status: 'ACTIVE', cancelAtPeriodEnd: false, usage: { projects: 1, maxProjects: 3, membersPerProject: 1, maxMembersPerProject: 5 }, features: [], capabilities: { attachments: false } };
     } else if (pathname.endsWith('/users')) {
       body = [selfUser, otherUser];
+    } else if (pathname.endsWith('/presence') && request.method() === 'GET') {
+      // Ana está desconectada y su última conexión fue hace 5 minutos.
+      body = {
+        'user-1': { status: 'AVAILABLE', lastSeenAt: new Date(Date.now() - 60_000).toISOString() },
+        'user-2': { status: 'OFFLINE', lastSeenAt: new Date(Date.now() - 5 * 60_000).toISOString() }
+      };
     } else if (pathname.endsWith('/projects')) {
       body = [project];
     } else if (pathname.endsWith('/channels/direct') && request.method() === 'POST') {
@@ -167,4 +173,18 @@ test('se puede iniciar un mensaje directo desde el listado de usuarios', async (
 
   await expect(dialog).toBeHidden();
   await expect(page.getByText('¿Cómo va la tarea?')).toBeVisible();
+});
+
+test('el DM muestra la última conexión de la otra persona', async ({ page }) => {
+  await mockApplication(page);
+  await page.goto('/dashboard/chat');
+  await page.getByRole('button', { name: 'Ana Directa' }).click();
+
+  // En la cabecera del DM: "Desconectado · última vez conectado hace 5 min".
+  await expect(page.getByText(/última vez conectado hace 5 min/).first()).toBeVisible();
+
+  // En la lista de conversaciones, con la fecha exacta como tooltip.
+  const item = page.getByRole('button', { name: 'Ana Directa' });
+  await expect(item.getByText('hace 5 min')).toBeVisible();
+  await expect(item.locator('[title^="Última conexión:"]')).toHaveCount(1);
 });

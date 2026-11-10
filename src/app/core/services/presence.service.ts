@@ -4,7 +4,7 @@ import { Observable, of, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { PresenceEntry, PresenceStatus, User } from '../models';
 import { environment } from '../../../environments/environment';
-import { orderedPresenceStatuses, presenceDotColor, presenceIcon, presenceLabel, suppressesPush } from '../utils/presence.utils';
+import { orderedPresenceStatuses, presenceDotColor, presenceIcon, presenceLabel, suppressesPush, lastSeenRelative, lastSeenTooltip } from '../utils/presence.utils';
 
 const API_URL = `${environment.apiUrl}/presence`;
 const HEARTBEAT_INTERVAL_MS = 60_000;  // cada 60 s
@@ -23,6 +23,12 @@ export class PresenceService {
   /** Presencia de todos los usuarios activos: userId -> entrada. */
   readonly byUserId = signal<Map<string, PresenceEntry>>(new Map());
 
+  /**
+   * Reloj interno: permite que los textos relativos ("hace 5 min") se
+   * refresquen solos sin depender de que cambie la respuesta del servidor.
+   */
+  readonly clock = signal(Date.now());
+
   private activityTimestamp = Date.now();
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -39,7 +45,7 @@ export class PresenceService {
   }
 
   /** Entrada de presencia de un usuario concreto. */
-  get(userId: string | null): PresenceEntry | undefined {
+  get(userId: string | null | undefined): PresenceEntry | undefined {
     if (!userId) return undefined;
     return this.byUserId().get(userId);
   }
@@ -62,6 +68,44 @@ export class PresenceService {
     return entry ? suppressesPush(entry.status) : false;
   }
 
+  /** Marca de última conexión de un usuario (null si nunca se conectó o está oculta). */
+  lastSeenAt(userId: string | null | undefined): string | null {
+    if (!userId) return null;
+    return this.get(userId)?.lastSeenAt ?? null;
+  }
+
+  /** ¿El usuario está desconectado? Solo entonces tiene sentido mostrar su última conexión. */
+  isOffline(userId: string | null | undefined): boolean {
+    return this.get(userId)?.status === 'OFFLINE';
+  }
+
+  /** Tiempo desde la última conexión de un usuario, en texto corto ("hace 5 min"). */
+  lastSeenFor(userId: string | null | undefined): string {
+    return this.lastSeenText(this.lastSeenAt(userId));
+  }
+
+  /** Tiempo desde la última conexión a partir de una marca suelta (admin, perfil). */
+  lastSeenText(value: string | null | undefined): string {
+    return lastSeenRelative(value, this.clock());
+  }
+
+  /** Fecha y hora exactas de la última conexión (tooltip). */
+  lastSeenTitle(value: string | null | undefined): string {
+    return lastSeenTooltip(value);
+  }
+
+  /** Última conexión de un usuario, solo si está desconectado (para el chat). */
+  lastSeenWhenOffline(userId: string | null | undefined): string {
+    if (!this.isOffline(userId)) return '';
+    return this.lastSeenFor(userId);
+  }
+
+  /** Tooltip de la última conexión de un usuario, solo si está desconectado. */
+  lastSeenTitleWhenOffline(userId: string | null | undefined): string {
+    if (!this.isOffline(userId)) return '';
+    return this.lastSeenTitle(this.lastSeenAt(userId));
+  }
+
   private isIdle(): boolean {
     return Date.now() - this.activityTimestamp > IDLE_AFTER_MS;
   }
@@ -71,8 +115,12 @@ export class PresenceService {
     this.stop();
     this.heartbeat();
     this.refreshPresenceMap();
+    this.clock.set(Date.now());
     this.heartbeatTimer = setInterval(() => this.heartbeat(), HEARTBEAT_INTERVAL_MS);
-    this.pollTimer = setInterval(() => this.refreshPresenceMap(), PRESENCE_POLL_INTERVAL_MS);
+    this.pollTimer = setInterval(() => {
+      this.clock.set(Date.now());
+      this.refreshPresenceMap();
+    }, PRESENCE_POLL_INTERVAL_MS);
   }
 
   /** Detiene heartbeat y sondeo. */
@@ -110,7 +158,8 @@ export class PresenceService {
         this.myStatus.set(res.status);
         this.byUserId.update(map => {
           const next = new Map(map);
-          next.set(res.userId, { userId: res.userId, status: res.status, lastSeenAt: null });
+          const previous = next.get(res.userId);
+          next.set(res.userId, { userId: res.userId, status: res.status, lastSeenAt: previous?.lastSeenAt ?? null });
           return next;
         });
       }),

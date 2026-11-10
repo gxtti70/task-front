@@ -148,6 +148,7 @@ export interface AdminUser {
   role: UserRole;
   active: boolean;
   createdAt?: string;
+  lastSeenAt?: string | null;
 }
 
 export interface ProjectMember {

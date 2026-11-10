@@ -80,4 +80,28 @@ describe('PresenceService', () => {
     expect(service.statuses).toContain('AVAILABLE');
     expect(service.statuses).toContain('DO_NOT_DISTURB');
   });
+
+  it('lastSeenWhenOffline solo muestra la última conexión de quien está desconectado', () => {
+    const now = new Date('2026-11-08T12:00:00Z');
+    service.clock.set(now.getTime());
+    service.byUserId.set(new Map([
+      ['u-off', { userId: 'u-off', status: 'OFFLINE' as PresenceStatus, lastSeenAt: new Date(now.getTime() - 5 * 60_000).toISOString() }],
+      ['u-on', { userId: 'u-on', status: 'AVAILABLE' as PresenceStatus, lastSeenAt: now.toISOString() }]
+    ]));
+
+    expect(service.isOffline('u-off')).toBe(true);
+    expect(service.lastSeenWhenOffline('u-off')).toBe('hace 5 min');
+    expect(service.lastSeenTitleWhenOffline('u-off')).toContain('Última conexión:');
+    expect(service.lastSeenWhenOffline('u-on')).toBe('');
+    expect(service.lastSeenWhenOffline(null)).toBe('');
+    expect(service.lastSeenTitleWhenOffline(null)).toBe('');
+  });
+
+  it('lastSeenText formatea una marca suelta usando el reloj del servicio', () => {
+    const now = new Date('2026-11-08T12:00:00Z');
+    service.clock.set(now.getTime());
+
+    expect(service.lastSeenText(new Date(now.getTime() - 2 * 3_600_000).toISOString())).toBe('hace 2 h');
+    expect(service.lastSeenText(null)).toBe('');
+  });
 });

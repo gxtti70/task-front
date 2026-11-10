@@ -61,6 +61,9 @@ import { orderedPresenceStatuses } from '../../core/utils/presence.utils';
                 {{ presence.label(auth.currentUser()?.id ?? null) || 'Disponible' }}
               </span>
             </div>
+            <p class="text-[10px] text-zinc-500" [attr.title]="myLastSeenTitle() || null">
+              Última conexión: {{ myLastSeen() }}
+            </p>
             <div class="flex flex-wrap gap-2 mt-2">
               @for (status of statuses; track status) {
                 <button type="button" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-zinc-300 hover:bg-white/10 hover:text-white transition-colors"
@@ -180,6 +183,13 @@ export class ProfileModalComponent {
   readonly presence = inject(PresenceService);
   readonly tier = computed(() => this.subscriptions.tier());
   readonly statuses = orderedPresenceStatuses();
+  /** Tu última conexión: "ahora" mientras estás conectado, o el tiempo transcurrido. */
+  readonly myLastSeen = computed(() => {
+    const id = this.auth.currentUser()?.id ?? null;
+    if (!this.presence.isOffline(id)) return 'ahora';
+    return this.presence.lastSeenFor(id) || 'sin registro';
+  });
+  readonly myLastSeenTitle = computed(() => this.presence.lastSeenTitle(this.presence.lastSeenAt(this.auth.currentUser()?.id ?? null)));
   fullName = this.auth.currentUser()?.fullName || this.auth.currentUser()?.name || '';
   avatarData = this.auth.currentUser()?.avatarData || '';
   timezone = this.auth.currentUser()?.timezone || 'America/Bogota';
