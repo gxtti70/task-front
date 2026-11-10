@@ -878,3 +878,19 @@ html.blue .chat-lightbox-actions button, html.blue .chat-lightbox-nav { border-c
   }
   .chat-layout > section > footer { padding-bottom: max(.75rem, env(safe-area-inset-bottom)); }
 }
+
+/* ==========================================================================
+   CDK Drag & Drop (Kanban)
+   El preview necesita su propia transición de transform. Si hereda la lista
+   multi-propiedad de Tailwind ("transition duration-200"), @angular/cdk 21
+   revienta en parseCssTimeUnitsToMs al soltar (transition-property tiene
+   11 entradas y transition-duration solo 1), el cleanup del arrastre nunca
+   se ejecuta y el clon queda superpuesto en el body bloqueando el tablero.
+   ========================================================================== */
+.cdk-drag-placeholder { opacity: 0; }
+
+.cdk-drag-animating { transition: transform 250ms cubic-bezier(0, 0, 0.2, 1); }
+
+.cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}

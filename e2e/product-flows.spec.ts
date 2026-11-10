@@ -67,6 +67,11 @@ test('tasks can move between Kanban columns with drag and drop', async ({ page }
   await expect(card).toBeVisible();
   await expect(doneColumn).toBeVisible();
 
+  // El estado solo se persiste si el PATCH sale: es lo que rompía el arrastre
+  // cuando el preview heredaba la transición multi-propiedad de Tailwind.
+  const statusPatch = page.waitForRequest(request =>
+    request.url().endsWith('/tasks/task-1/status') && request.method() === 'PATCH');
+
   // CDK no reacciona bien a dragTo en headless: se hace el arrastre con pasos de ratón.
   const cardBox = await card.boundingBox();
   const targetBox = await doneColumn.boundingBox();
@@ -77,10 +82,16 @@ test('tasks can move between Kanban columns with drag and drop', async ({ page }
   await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + 80, { steps: 6 });
   await page.mouse.up();
 
-  // La tarjeta renderiza la etiqueta de la columna donde quedó tras el PATCH.
-  // Durante la animación del drop el placeholder/preview duplican la tarjeta:
-  // se aserciona con .first() para evitar la violación de strict mode.
-  await expect(card.first()).toContainText('Finalizado');
+  await statusPatch;
+
+  // La tarjeta vive en la columna destino con el estado ya aplicado.
+  const movedCard = doneColumn.locator('article[cdkdrag]').filter({ hasText: 'Ship the release' });
+  await expect(movedCard).toHaveCount(1);
+  await expect(movedCard.locator('select')).toHaveValue('DONE');
+
+  // El arrastre se limpió: no quedan clones del preview ni del placeholder.
+  await expect(page.locator('.cdk-drag-preview')).toHaveCount(0);
+  await expect(page.locator('.cdk-drag-placeholder')).toHaveCount(0);
 });
 
 test('project plan limits surface a useful error', async ({ page }) => {

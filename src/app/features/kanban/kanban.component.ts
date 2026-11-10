@@ -188,8 +188,11 @@ export class KanbanComponent implements OnInit {
   }
 
   dropTask(event: CdkDragDrop<Task[]>, targetStatus: TaskStatus): void {
-    const task = (event.item.data as Task | undefined)
-      ?? event.previousContainer.data[event.previousIndex];
+    // CDK 21 entrega el dato arrastrado (la Task) en `item`, aunque su tipado
+    // siga declarando CdkDrag: se aceptan las dos formas y, si noviniera
+    // ninguna, se recurre al índice dentro de la columna de origen.
+    const item = event.item as unknown as Task & { data?: Task };
+    const task = item?.data ?? item ?? event.previousContainer.data[event.previousIndex];
     if (task) this.setTaskStatus(task, targetStatus);
   }
 
