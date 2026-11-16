@@ -30,14 +30,20 @@ export const routes: Routes = [
         loadComponent: () => import('./features/auth/register.component').then(m => m.RegisterComponent)
       },
       {
-        path: 'forgot-password',
+        path: 'recover-password',
         data: { title: 'Recuperar contraseña | TaskManager' },
-        loadComponent: () => import('./features/auth/forgot-password.component').then(m => m.ForgotPasswordComponent)
+        loadComponent: () => import('./features/auth/recover-password.component').then(m => m.RecoverPasswordComponent)
+      },
+      {
+        // Rutas conservadas de la recuperación anterior por enlace: ahora redirigen al flujo por código.
+        path: 'forgot-password',
+        redirectTo: 'recover-password',
+        pathMatch: 'full'
       },
       {
         path: 'reset-password',
-        data: { title: 'Nueva contraseña | TaskManager' },
-        loadComponent: () => import('./features/auth/reset-password.component').then(m => m.ResetPasswordComponent)
+        redirectTo: 'recover-password',
+        pathMatch: 'full'
       }
     ]
   },

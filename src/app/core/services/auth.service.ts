@@ -98,17 +98,21 @@ export class AuthService {
     );
   }
 
-  forgotPassword(email: string): Observable<string> {
-    return this.http.post<{ message: string }>(`${this.API_URL}/forgot-password`, { email }).pipe(
-      map(res => res.message),
+  /** Solicita un código de verificación de 6 dígitos para restablecer la contraseña. */
+  requestRecoveryCode(email: string): Observable<{ message: string; resendAvailableInSeconds: number }> {
+    return this.http.post<{ message: string; resendAvailableInSeconds: number }>(
+      `${this.API_URL}/forgot-password`, { email }, { withCredentials: true }
+    ).pipe(
       catchError(err => throwError(() => err))
     );
   }
 
-  resetPassword(token: string, password: string): Observable<string> {
-    return this.http.post<{ message: string }>(`${this.API_URL}/reset-password`, { token, password }).pipe(
+  /** Restablece la contraseña con el código recibido por correo. */
+  resetPasswordWithCode(email: string, code: string, password: string): Observable<string> {
+    return this.http.post<{ message: string }>(
+      `${this.API_URL}/reset-password`, { email, code, password }, { withCredentials: true }
+    ).pipe(
       map(res => res.message),
-      tap(() => this.clearSession()),
       catchError(err => throwError(() => err))
     );
   }
