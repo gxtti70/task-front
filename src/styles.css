@@ -119,6 +119,12 @@ body {
   .premium-secondary-button:hover,
   .premium-icon-button:hover { border-color: rgba(255, 255, 255, .18); background: rgba(255, 255, 255, .08); color: #fff; }
   .premium-icon-button { width: 2.5rem; padding: 0; }
+  .premium-icon-button:disabled { opacity: .45; cursor: not-allowed; }
+  .premium-icon-button:disabled:hover {
+    border-color: rgba(255, 255, 255, .09);
+    background: rgba(255, 255, 255, .035);
+    color: #d4d4d8;
+  }
 
   .profile-accent-button:hover {
     border-color: color-mix(in srgb, var(--profile-accent) 35%, transparent);

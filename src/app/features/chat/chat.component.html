@@ -172,9 +172,23 @@
             </span>
           }
         </div>
-        <span class="text-[10px] uppercase tracking-wider text-zinc-600">
-          {{ channel.projectId !== null ? 'Sala de proyecto' : 'Mensaje directo' }}
-        </span>
+        <div class="flex shrink-0 items-center gap-3">
+          <span class="text-[10px] uppercase tracking-wider text-zinc-600">
+            {{ channel.projectId !== null ? 'Sala de proyecto' : 'Mensaje directo' }}
+          </span>
+          @if (channel.projectId === null && channel.otherUserId) {
+            <span class="flex items-center gap-1.5">
+              <button type="button" class="premium-icon-button" disabled
+                      title="Videollamada próximamente" aria-label="Iniciar videollamada (próximamente)">
+                <lucide-icon name="phone" class="h-4 w-4"></lucide-icon>
+              </button>
+              <button type="button" class="premium-icon-button"
+                      title="Escribir mensaje" aria-label="Escribir mensaje" (click)="focusComposer()">
+                <lucide-icon name="message-square" class="h-4 w-4"></lucide-icon>
+              </button>
+            </span>
+          }
+        </div>
       </header>
 
       <app-typing-indicator />

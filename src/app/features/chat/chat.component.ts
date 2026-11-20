@@ -163,6 +163,11 @@ export class ChatComponent implements OnInit {
     this.submitDraft();
   }
 
+  /** Centra el cursor en el campo de texto (botón de mensaje del header). */
+  focusComposer(): void {
+    this.composer()?.focus();
+  }
+
   onSendClick(): void {
     this.submitDraft();
   }
