@@ -210,7 +210,10 @@ export class CallService {
     if (this.peer || typeof RTCPeerConnection === 'undefined') return;
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     pc.onicecandidate = event => {
-      if (event.candidate) void this.sendSignal('ICE', JSON.stringify(event.candidate.toJSON()));
+      if (!event.candidate) return;
+      // Observable perezoso: hay que suscribirse para que la petición salga.
+      this.sendSignal('ICE', JSON.stringify(event.candidate.toJSON()))
+        .subscribe({ error: () => { /* fallo transitorio: el siguiente candidato reintenta */ } });
     };
     pc.ontrack = event => {
       this.remoteStream.set(event.streams[0] ?? new MediaStream([event.track]));

@@ -41,6 +41,59 @@ function event(overrides: Partial<CallEvent> = {}): CallEvent {
 /** Sincroniza las promesas internas (defer, getUserMedia) entre peticiones. */
 const flushAsync = () => new Promise<void>(resolve => setTimeout(resolve, 0));
 
+/**
+ * Doble de RTCPeerConnection para ejercer el flujo WebRTC en jsdom (no lo
+ * implementa): solo registra las llamadas y permite emitir candidatos.
+ */
+class FakePeerConnection {
+  static readonly instances: FakePeerConnection[] = [];
+
+  onicecandidate: ((event: { candidate: { toJSON: () => RTCIceCandidateInit } | null }) => void) | null = null;
+  ontrack: ((event: { streams: MediaStream[]; track: MediaStreamTrack }) => void) | null = null;
+  localDescription: RTCSessionDescriptionInit | null = null;
+  remoteDescription: RTCSessionDescriptionInit | null = null;
+  readonly addedTracks: MediaStreamTrack[] = [];
+  readonly remoteCandidates: RTCIceCandidateInit[] = [];
+
+  constructor(_config?: RTCConfiguration) {
+    FakePeerConnection.instances.push(this);
+  }
+
+  addTrack(track: MediaStreamTrack): void {
+    this.addedTracks.push(track);
+  }
+
+  createOffer(): Promise<RTCSessionDescriptionInit> {
+    return Promise.resolve({ type: 'offer', sdp: 'v=0\r\no=- 0 0 IN IP4 127.0.0.1\r\n' });
+  }
+
+  createAnswer(): Promise<RTCSessionDescriptionInit> {
+    return Promise.resolve({ type: 'answer', sdp: 'v=0\r\no=- 0 0 IN IP4 127.0.0.1\r\n' });
+  }
+
+  setLocalDescription(description: RTCSessionDescriptionInit): Promise<void> {
+    this.localDescription = description;
+    return Promise.resolve();
+  }
+
+  setRemoteDescription(description: RTCSessionDescriptionInit): Promise<void> {
+    this.remoteDescription = description;
+    return Promise.resolve();
+  }
+
+  addIceCandidate(candidate: RTCIceCandidateInit): Promise<void> {
+    this.remoteCandidates.push(candidate);
+    return Promise.resolve();
+  }
+
+  close(): void { /* nada que liberar en el doble */ }
+
+  /** Simula que el navegador recoge un candidato y lanza onicecandidate. */
+  emitCandidate(candidate: RTCIceCandidateInit): void {
+    this.onicecandidate?.({ candidate: { toJSON: () => candidate } });
+  }
+}
+
 describe('CallService', () => {
   let service: CallService;
   let http: HttpTestingController;
@@ -60,8 +113,10 @@ describe('CallService', () => {
   afterEach(() => {
     service.stopPolling();
     http.verify();
-    // Limpia el mediaDevices que alguna prueba haya instalado en navigator.
+    // Limpia los dobles que alguna prueba haya instalado en el entorno.
     Object.defineProperty(navigator, 'mediaDevices', { value: undefined, configurable: true });
+    Object.defineProperty(window, 'RTCPeerConnection', { value: undefined, configurable: true });
+    FakePeerConnection.instances.length = 0;
   });
 
   /** Simula la sesión iniciada como el usuario indicado. */
@@ -228,5 +283,39 @@ describe('CallService', () => {
     http.expectOne('/api/calls/active').flush([snapshot()]);
 
     expect(service.call()).toBeNull();
+  });
+
+  it('envía la oferta y cada candidato ICE al otro extremo', async () => {
+    Object.defineProperty(window, 'RTCPeerConnection', { value: FakePeerConnection, configurable: true });
+    loginAs(ME);
+
+    service.startCall('chan-1').subscribe({ error: () => { /* lo comprueba la prueba */ } });
+    await flushAsync();
+    http.expectOne('/api/calls').flush(snapshot());
+    await flushAsync();
+
+    // La oferta SDP sale suscrita (firstValueFrom).
+    const offer = http.expectOne('/api/calls/call-1/signal');
+    expect(offer.request.body).toEqual({ type: 'OFFER', payload: 'v=0\r\no=- 0 0 IN IP4 127.0.0.1\r\n' });
+    offer.flush(null);
+
+    // Regresión: el envío de candidatos ICE estaba en un observable sin suscribir
+    // y nunca salía la petición, por lo que no había conexión P2P (ni audio ni vídeo).
+    const peer = FakePeerConnection.instances.at(-1);
+    expect(peer).toBeDefined();
+    const candidate: RTCIceCandidateInit = {
+      candidate: 'candidate:1 1 UDP 2122252543 192.168.1.5 50000 typ host',
+      sdpMid: '0',
+      sdpMLineIndex: 0
+    };
+    peer?.emitCandidate(candidate);
+    await flushAsync();
+
+    const ice = http.expectOne('/api/calls/call-1/signal');
+    expect(ice.request.body).toEqual({ type: 'ICE', payload: JSON.stringify(candidate) });
+    ice.flush(null);
+
+    expect(service.call()).not.toBeNull();
+    service.stopPolling();
   });
 });
