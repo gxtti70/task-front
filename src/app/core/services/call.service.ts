@@ -50,6 +50,13 @@ export class CallService {
   readonly camEnabled = signal(true);
   /** Verdadero mientras se pide permiso de cámara/micrófono y se crea la sesión. */
   readonly starting = signal(false);
+  /**
+   * Verdadero cuando la llamada es de vídeo. Se deriva del SDP (`m=video`), que
+   * es la fuente de verdad de la negociación y la ven ambos extremos por igual.
+   */
+  readonly videoCall = signal(false);
+  /** Nº de pistas de vídeo recibidas del otro extremo (0 en llamada de voz). */
+  readonly remoteVideoTracks = signal(0);
 
   private readonly myId = computed(() => this.auth.currentUser()?.id ?? '');
   readonly isCaller = computed(() => {
@@ -60,6 +67,10 @@ export class CallService {
     const call = this.call();
     return !!call && call.calleeId === this.myId();
   });
+  /** Hay pista de vídeo local (cámara disponible en esta sesión). */
+  readonly hasLocalVideo = computed(() => (this.localStream()?.getVideoTracks().length ?? 0) > 0);
+  /** El otro extremo está enviando vídeo (no confundir con su audio). */
+  readonly hasRemoteVideo = computed(() => this.remoteVideoTracks() > 0);
 
   private peer: RTCPeerConnection | null = null;
   private lastSeq = INITIAL_CURSOR;
@@ -69,20 +80,28 @@ export class CallService {
   private pendingOffer: string | null = null;
   private pendingIce: RTCIceCandidateInit[] = [];
   private answerSent = false;
+  /** Ids de las pistas remotas ya recibidas (el MediaStream se reutiliza). */
+  private readonly remoteTrackIds = new Set<string>();
   /** Serializa el procesamiento asíncrono de los eventos (SDP/ICE). */
   private eventChain: Promise<void> = Promise.resolve();
 
   /**
-   * Inicia una videollamada en un DM. Pide primero permiso de cámara y
-   * micrófono (si falla, no llega a crearse la sesión en el backend) y,
-   * con la instantánea creada, genera y envía la oferta SDP.
+   * Inicia una llamada en un DM. Con `withVideo` pide cámara y micrófono (si
+   * falla la cámara, sigue con solo audio); sin él, solo micrófono: nunca se
+   * llega a pedir permiso de cámara. Si el permiso falla, no se llega a crear
+   * la sesión en el backend. Con la instantánea creada, se genera y envía la
+   * oferta SDP.
    */
-  startCall(channelId: string): Observable<CallSnapshot> {
+  startCall(channelId: string, withVideo: boolean): Observable<CallSnapshot> {
     if (this.call()) return throwError(() => new Error('Ya hay una llamada en curso.'));
     this.starting.set(true);
-    return defer(() => this.openLocalMedia()).pipe(
+    return defer(() => this.openLocalMedia(withVideo)).pipe(
       switchMap(() => this.http.post<CallSnapshot>(this.url, { channelId })),
-      tap(snapshot => this.beginAsCaller(snapshot)),
+      tap(snapshot => {
+        this.beginAsCaller(snapshot);
+        // El SDP de la oferta lo confirma o corrige (si no hubo cámara).
+        this.videoCall.set(withVideo);
+      }),
       finalize(() => this.starting.set(false))
     );
   }
@@ -201,6 +220,9 @@ export class CallService {
     this.pendingOffer = null;
     this.pendingIce = [];
     this.answerSent = false;
+    this.videoCall.set(false);
+    this.remoteTrackIds.clear();
+    this.remoteVideoTracks.set(0);
     this.eventChain = Promise.resolve();
     if (this.eventsTimer) clearInterval(this.eventsTimer);
     this.eventsTimer = setInterval(() => this.pollEvents(), EVENTS_POLL_INTERVAL_MS);
@@ -216,6 +238,12 @@ export class CallService {
         .subscribe({ error: () => { /* fallo transitorio: el siguiente candidato reintenta */ } });
     };
     pc.ontrack = event => {
+      // El mismo MediaStream llega con la 2ª pista: se cuentan los ids para
+      // saber si de verdad hay vídeo remoto (no basta con la signal del stream).
+      if (event.track.kind === 'video' && !this.remoteTrackIds.has(event.track.id)) {
+        this.remoteTrackIds.add(event.track.id);
+        this.remoteVideoTracks.set(this.remoteTrackIds.size);
+      }
       this.remoteStream.set(event.streams[0] ?? new MediaStream([event.track]));
     };
     this.peer = pc;
@@ -227,18 +255,22 @@ export class CallService {
     for (const track of stream.getTracks()) this.peer.addTrack(track, stream);
   }
 
-  /** Pide cámara y micrófono; sin cámara, sigue con solo audio. */
-  private async openLocalMedia(): Promise<void> {
+  /** Pide micrófono y, solo si la llamada es de vídeo, también cámara. */
+  private async openLocalMedia(withVideo: boolean): Promise<void> {
     if (this.localStream()) return;
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) return;
-    try {
-      this.setLocalStream(await navigator.mediaDevices.getUserMedia({ video: true, audio: true }));
-    } catch {
+    if (withVideo) {
       try {
-        this.setLocalStream(await navigator.mediaDevices.getUserMedia({ audio: true }));
+        this.setLocalStream(await navigator.mediaDevices.getUserMedia({ video: true, audio: true }));
+        return;
       } catch {
-        throw new Error('No se pudo acceder a la cámara ni al micrófono.');
+        // Sin cámara: la llamada sigue como de voz (el SDP no llevará m=video).
       }
+    }
+    try {
+      this.setLocalStream(await navigator.mediaDevices.getUserMedia({ audio: true }));
+    } catch {
+      throw new Error(withVideo ? 'No se pudo acceder a la cámara ni al micrófono.' : 'No se pudo acceder al micrófono.');
     }
   }
 
@@ -257,7 +289,11 @@ export class CallService {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       const sdp = pc.localDescription?.sdp ?? offer.sdp ?? '';
-      if (sdp) await firstValueFrom(this.sendSignal('OFFER', sdp));
+      if (sdp) {
+        // El SDP es la fuente de verdad: sin m=video la llamada es de voz.
+        this.videoCall.set(sdp.includes('m=video'));
+        await firstValueFrom(this.sendSignal('OFFER', sdp));
+      }
     } catch {
       this.toast.error('No se pudo preparar la videollamada.', 'Señalización fallida');
     }
@@ -266,7 +302,7 @@ export class CallService {
   /** Prepara WebRTC del lado llamado antes de confirmar la aceptación. */
   private async prepareAnswer(): Promise<void> {
     if (typeof RTCPeerConnection === 'undefined') return;
-    await this.openLocalMedia();
+    await this.openLocalMedia(this.videoCall());
     this.createPeer();
     this.addLocalTracks();
     if (this.pendingOffer) await this.answerNow();
@@ -329,6 +365,8 @@ export class CallService {
 
   private async onOffer(payload: string | null): Promise<void> {
     if (!payload || !this.isCallee()) return;
+    // El SDP de la oferta decide si el lado llamado pide cámara o solo audio.
+    this.videoCall.set(payload.includes('m=video'));
     // Si aún no se ha aceptado, la oferta se consumirá al aceptar (prepareAnswer).
     if (!this.peer) {
       this.pendingOffer = payload;
@@ -414,6 +452,9 @@ export class CallService {
     this.pendingOffer = null;
     this.pendingIce = [];
     this.answerSent = false;
+    this.videoCall.set(false);
+    this.remoteTrackIds.clear();
+    this.remoteVideoTracks.set(0);
     this.eventChain = Promise.resolve();
     if (silent || !reason) return;
     this.toast.info(END_MESSAGES[reason]);

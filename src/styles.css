@@ -901,151 +901,40 @@ html.blue .chat-lightbox-actions button, html.blue .chat-lightbox-nav { border-c
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
 
-/* ==========================================================================
-   Videollamadas — tarjeta de llamada entrante y panel de llamada en curso
-   ========================================================================== */
-
-.call-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 140;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
-  background: rgb(5 8 14 / 72%);
-  backdrop-filter: blur(10px);
-}
-.call-ring-card {
-  display: grid;
-  width: min(21rem, calc(100vw - 2rem));
-  justify-items: center;
-  gap: .45rem;
-  padding: 1.6rem 1.4rem;
-  border: 1px solid #30384a;
-  border-radius: 1.25rem;
-  background: #171b25;
-  color: #f8fafc;
-  text-align: center;
-  box-shadow: 0 24px 60px rgb(15 23 42 / 45%);
-  animation: message-notification-enter .22s ease-out;
-}
-.call-ring-avatar {
-  display: grid;
-  width: 3.5rem;
-  height: 3.5rem;
-  place-items: center;
-  border-radius: 9999px;
-  background: linear-gradient(145deg, #6366f1, #8b5cf6);
-  color: #fff;
-  font-size: 1.05rem;
-  font-weight: 700;
-}
+/* Videollamadas: tarjeta de llamada entrante, panel en curso y llamada de voz */
+.call-backdrop { position: fixed; inset: 0; z-index: 140; display: grid; place-items: center; padding: 1rem; background: rgb(5 8 14 / 72%); backdrop-filter: blur(10px); }
+.call-ring-card { display: grid; width: min(21rem, calc(100vw - 2rem)); justify-items: center; gap: .45rem; padding: 1.6rem 1.4rem; border: 1px solid #30384a; border-radius: 1.25rem; background: #171b25; color: #f8fafc; text-align: center; box-shadow: 0 24px 60px rgb(15 23 42 / 45%); animation: message-notification-enter .22s ease-out; }
+.call-ring-avatar { display: grid; width: 3.5rem; height: 3.5rem; place-items: center; border-radius: 9999px; background: linear-gradient(145deg, #6366f1, #8b5cf6); color: #fff; font-size: 1.05rem; font-weight: 700; }
 .call-ring-name { margin-top: .45rem; font-size: 1.05rem; font-weight: 700; overflow-wrap: anywhere; }
-.call-ring-status { color: #a8b1c4; font-size: .8rem; }
+.call-ring-status { display: flex; align-items: center; justify-content: center; color: #a8b1c4; font-size: .8rem; }
 .call-ring-actions { display: flex; gap: 1.4rem; margin-top: .85rem; }
-.call-action {
-  display: grid;
-  width: 3.4rem;
-  height: 3.4rem;
-  place-items: center;
-  border: 0;
-  border-radius: 9999px;
-  color: #fff;
-  cursor: pointer;
-  transition: transform .15s ease, filter .15s ease;
-}
+.call-action { display: grid; width: 3.4rem; height: 3.4rem; place-items: center; border: 0; border-radius: 9999px; color: #fff; cursor: pointer; transition: transform .15s ease, filter .15s ease; }
 .call-action:hover { transform: scale(1.06); filter: brightness(1.08); }
 .call-action:focus-visible, .call-control:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 2px; }
 .call-action--accept { background: #16a34a; animation: call-ring-pulse 1.6s ease-in-out infinite; }
 .call-action--decline { background: #dc2626; }
-@keyframes call-ring-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgb(22 163 74 / 45%); }
-  50% { box-shadow: 0 0 0 12px rgb(22 163 74 / 0%); }
-}
-
-.call-stage {
-  position: fixed;
-  z-index: 140;
-  top: 50%;
-  left: 50%;
-  display: flex;
-  width: min(46rem, calc(100vw - 2rem));
-  transform: translate(-50%, -50%);
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid #30384a;
-  border-radius: 1.25rem;
-  background: #0d111a;
-  color: #f8fafc;
-  box-shadow: 0 30px 70px rgb(15 23 42 / 55%);
-  animation: message-notification-enter .22s ease-out;
-}
-.call-stage-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: .8rem 1rem;
-  border-bottom: 1px solid #30384a;
-  background: #171b25;
-}
+@keyframes call-ring-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgb(22 163 74 / 45%); } 50% { box-shadow: 0 0 0 12px rgb(22 163 74 / 0%); } }
+.call-stage { position: fixed; z-index: 140; top: 50%; left: 50%; display: flex; width: min(46rem, calc(100vw - 2rem)); transform: translate(-50%, -50%); flex-direction: column; overflow: hidden; border: 1px solid #30384a; border-radius: 1.25rem; background: #0d111a; color: #f8fafc; box-shadow: 0 30px 70px rgb(15 23 42 / 55%); animation: message-notification-enter .22s ease-out; }
+.call-stage-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .8rem 1rem; border-bottom: 1px solid #30384a; background: #171b25; }
 .call-stage-info { display: grid; min-width: 0; gap: .1rem; }
 .call-stage-info strong { overflow: hidden; font-size: .95rem; text-overflow: ellipsis; white-space: nowrap; }
 .call-stage-info span { color: #a8b1c4; font-size: .74rem; }
 .call-stage-duration { flex: 0 0 auto; color: #a5b4fc; font-size: .85rem; font-variant-numeric: tabular-nums; }
 .call-stage-video { position: relative; aspect-ratio: 16 / 9; background: #05080e; }
 .call-remote-video { display: block; width: 100%; height: 100%; object-fit: cover; background: #05080e; }
-.call-local-video {
-  position: absolute;
-  right: .75rem;
-  bottom: .75rem;
-  width: 8.5rem;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-  border: 1px solid #30384a;
-  border-radius: .6rem;
-  background: #0d111a;
-  box-shadow: 0 8px 24px rgb(15 23 42 / 40%);
-}
-.call-stage-placeholder {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: .75rem;
-  padding: 1rem;
-  color: #a8b1c4;
-  font-size: .85rem;
-  text-align: center;
-}
+.call-local-video { position: absolute; right: .75rem; bottom: .75rem; width: 8.5rem; aspect-ratio: 16 / 9; object-fit: cover; border: 1px solid #30384a; border-radius: .6rem; background: #0d111a; box-shadow: 0 8px 24px rgb(15 23 42 / 40%); }
+.call-stage-placeholder { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: .75rem; padding: 1rem; color: #a8b1c4; font-size: .85rem; text-align: center; }
 .call-stage-placeholder p { margin: 0; }
-.call-stage-controls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: .9rem;
-  padding: .9rem;
-  border-top: 1px solid #30384a;
-  background: #171b25;
-}
-.call-control {
-  display: grid;
-  width: 2.9rem;
-  height: 2.9rem;
-  place-items: center;
-  border: 1px solid #30384a;
-  border-radius: 9999px;
-  background: #202635;
-  color: #e5e9f2;
-  cursor: pointer;
-  transition: background .15s ease, color .15s ease;
-}
+.call-stage-controls { display: flex; align-items: center; justify-content: center; gap: .9rem; padding: .9rem; border-top: 1px solid #30384a; background: #171b25; }
+.call-control { display: grid; width: 2.9rem; height: 2.9rem; place-items: center; border: 1px solid #30384a; border-radius: 9999px; background: #202635; color: #e5e9f2; cursor: pointer; transition: background .15s ease, color .15s ease; }
 .call-control:hover { background: #2a3143; }
 .call-control.is-off { border-color: #7f1d1d; background: #3f1d1d; color: #fca5a5; }
 .call-control--hangup { border-color: #7f1d1d; background: #dc2626; color: #fff; }
 .call-control--hangup:hover { background: #b91c1c; }
-
+.call-stage-voice { display: grid; place-content: center; justify-items: center; gap: .6rem; padding: 2.8rem 1.4rem; background: radial-gradient(circle at 50% 28%, #1b2130, #0d111a 72%); }
+.call-stage-voice-avatar { width: 5.5rem; height: 5.5rem; font-size: 1.6rem; }
+.call-stage-voice-name { font-size: 1.15rem; font-weight: 700; text-align: center; overflow-wrap: anywhere; }
+.call-voice-badge { padding: .2rem .65rem; border: 1px solid #30384a; border-radius: 9999px; background: #202635; color: #a8b1c4; font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; }
 /* Temas: claro y azul */
 html.light .call-backdrop { background: rgb(20 24 43 / 42%); }
 html.light .call-ring-card { border-color: #d8dce8; background: #fff; color: #14182b; box-shadow: 0 24px 60px rgb(20 24 43 / 18%); }
@@ -1058,11 +947,12 @@ html.light .call-stage-video, html.light .call-remote-video { background: #e7eaf
 html.light .call-local-video { border-color: #c9d0e0; background: #e7eaf3; }
 html.light .call-control { border-color: #d8dce8; background: #f1f3f9; color: #232a45; }
 html.light .call-control:hover { background: #e4e8f2; }
+html.light .call-stage-voice { background: radial-gradient(circle at 50% 28%, #ffffff, #eef1f8 72%); }
+html.light .call-voice-badge { border-color: #d8dce8; background: #f1f3f9; color: #5b6380; }
 html.blue .call-ring-card, html.blue .call-stage-header, html.blue .call-stage-controls { border-color: #2a4274; background: #101b36; }
 html.blue .call-stage { border-color: #2a4274; background: #0b1428; }
 html.blue .call-control { border-color: #2a4274; background: #16264a; }
 html.blue .call-stage-duration { color: #7dd3fc; }
-
-@media (prefers-reduced-motion: reduce) {
-  .call-ring-card, .call-stage, .call-action--accept { animation: none !important; }
-}
+html.blue .call-stage-voice { background: radial-gradient(circle at 50% 28%, #12203f, #0b1428 72%); }
+html.blue .call-voice-badge { border-color: #2a4274; background: #16264a; color: #93c5fd; }
+@media (prefers-reduced-motion: reduce) { .call-ring-card, .call-stage, .call-action--accept { animation: none !important; } }

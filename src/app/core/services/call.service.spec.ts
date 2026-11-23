@@ -128,7 +128,7 @@ describe('CallService', () => {
   it('crea la llamada desde el DM y guarda la instantánea como llamante', async () => {
     loginAs(ME);
     let failure: unknown = null;
-    service.startCall('chan-1').subscribe({ error: error => failure = error });
+    service.startCall('chan-1', true).subscribe({ error: error => failure = error });
 
     await flushAsync();
     const request = http.expectOne('/api/calls');
@@ -152,7 +152,7 @@ describe('CallService', () => {
     });
 
     let failure: unknown = null;
-    service.startCall('chan-1').subscribe({ error: error => failure = error });
+    service.startCall('chan-1', true).subscribe({ error: error => failure = error });
     await flushAsync();
 
     expect(failure).toBeInstanceOf(Error);
@@ -162,7 +162,7 @@ describe('CallService', () => {
 
   it('sondea los eventos con el cursor propio y lo va avanzando', async () => {
     loginAs(ME);
-    service.startCall('chan-1').subscribe({ error: () => { /* lo comprueba la prueba */ } });
+    service.startCall('chan-1', true).subscribe({ error: () => { /* lo comprueba la prueba */ } });
     await flushAsync();
     http.expectOne('/api/calls').flush(snapshot());
     service.stopPolling();
@@ -177,7 +177,7 @@ describe('CallService', () => {
 
   it('cierra la llamada y avisa cuando el evento STATE llega con ENDED', async () => {
     loginAs(ME);
-    service.startCall('chan-1').subscribe({ error: () => { /* lo comprueba la prueba */ } });
+    service.startCall('chan-1', true).subscribe({ error: () => { /* lo comprueba la prueba */ } });
     await flushAsync();
     http.expectOne('/api/calls').flush(snapshot());
 
@@ -247,7 +247,7 @@ describe('CallService', () => {
 
   it('cuelga la llamada en curso y limpia el estado local', async () => {
     loginAs(ME);
-    service.startCall('chan-1').subscribe({ error: () => { /* lo comprueba la prueba */ } });
+    service.startCall('chan-1', true).subscribe({ error: () => { /* lo comprueba la prueba */ } });
     await flushAsync();
     http.expectOne('/api/calls').flush(snapshot());
 
@@ -260,7 +260,7 @@ describe('CallService', () => {
 
   it('cuelga localmente cuando los eventos devuelven 404 (sesión purgada)', async () => {
     loginAs(ME);
-    service.startCall('chan-1').subscribe({ error: () => { /* lo comprueba la prueba */ } });
+    service.startCall('chan-1', true).subscribe({ error: () => { /* lo comprueba la prueba */ } });
     await flushAsync();
     http.expectOne('/api/calls').flush(snapshot());
 
@@ -289,7 +289,7 @@ describe('CallService', () => {
     Object.defineProperty(window, 'RTCPeerConnection', { value: FakePeerConnection, configurable: true });
     loginAs(ME);
 
-    service.startCall('chan-1').subscribe({ error: () => { /* lo comprueba la prueba */ } });
+    service.startCall('chan-1', true).subscribe({ error: () => { /* lo comprueba la prueba */ } });
     await flushAsync();
     http.expectOne('/api/calls').flush(snapshot());
     await flushAsync();
@@ -317,5 +317,84 @@ describe('CallService', () => {
 
     expect(service.call()).not.toBeNull();
     service.stopPolling();
+  });
+
+  it('pide solo micrófono en una llamada de voz y nunca cámara', async () => {
+    const requests: MediaStreamConstraints[] = [];
+    Object.defineProperty(navigator, 'mediaDevices', {
+      value: {
+        getUserMedia: (constraints: MediaStreamConstraints) => {
+          requests.push(constraints);
+          return Promise.reject(new Error('permiso denegado'));
+        }
+      },
+      configurable: true
+    });
+
+    let failure: unknown = null;
+    service.startCall('chan-1', false).subscribe({ error: error => failure = error });
+    await flushAsync();
+
+    expect(requests).toEqual([{ audio: true }]);
+    expect(failure).toBeInstanceOf(Error);
+    expect(service.call()).toBeNull();
+    http.expectNone('/api/calls');
+  });
+
+  it('pide cámara y micrófono cuando la llamada es de vídeo', async () => {
+    const requests: MediaStreamConstraints[] = [];
+    Object.defineProperty(navigator, 'mediaDevices', {
+      value: {
+        getUserMedia: (constraints: MediaStreamConstraints) => {
+          requests.push(constraints);
+          return Promise.reject(new Error('permiso denegado'));
+        }
+      },
+      configurable: true
+    });
+
+    let failure: unknown = null;
+    service.startCall('chan-1', true).subscribe({ error: error => failure = error });
+    await flushAsync();
+
+    // Primer intento con vídeo; sin cámara, reintenta con solo audio.
+    expect(requests).toEqual([{ video: true, audio: true }, { audio: true }]);
+    expect(failure).toBeInstanceOf(Error);
+    expect(service.call()).toBeNull();
+    http.expectNone('/api/calls');
+  });
+
+  it('detecta videollamada cuando la oferta SDP incluye m=video', async () => {
+    loginAs(PEER);
+    service.refreshActive();
+    http.expectOne('/api/calls/active').flush([snapshot()]);
+    service.stopPolling();
+
+    expect(service.videoCall()).toBe(false);
+    service.pollEvents();
+    http.expectOne('/api/calls/call-1/events?after=0').flush([
+      event({ seq: 1, type: 'OFFER', payload: 'v=0\r\nm=video 9 UDP/TLS/RTP/SAVPF 96\r\n' })
+    ]);
+    await flushAsync();
+
+    expect(service.videoCall()).toBe(true);
+    // La pista remota aún no ha llegado: no se muestra vídeo como conectado.
+    expect(service.hasRemoteVideo()).toBe(false);
+  });
+
+  it('detecta llamada de voz cuando la oferta SDP no incluye m=video', async () => {
+    loginAs(PEER);
+    service.refreshActive();
+    http.expectOne('/api/calls/active').flush([snapshot()]);
+    service.stopPolling();
+
+    service.pollEvents();
+    http.expectOne('/api/calls/call-1/events?after=0').flush([
+      event({ seq: 1, type: 'OFFER', payload: 'v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n' })
+    ]);
+    await flushAsync();
+
+    expect(service.videoCall()).toBe(false);
+    expect(service.hasLocalVideo()).toBe(false);
   });
 });

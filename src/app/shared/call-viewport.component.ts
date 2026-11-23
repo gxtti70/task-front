@@ -45,7 +45,8 @@ export class CallViewportComponent {
     const channel = this.chat.channels().find(item => item.id === call.channelId);
     if (channel) return channel.otherUserName || channel.name || 'Conversación';
     const self = this.auth.currentUser()?.id ?? '';
-    return call.calleeId === self ? 'Llamada entrante' : 'Videollamada';
+    if (call.calleeId === self) return 'Llamada entrante';
+    return this.calls.videoCall() ? 'Videollamada' : 'Llamada de voz';
   });
 
   readonly statusLabel = computed(() => {

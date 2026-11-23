@@ -171,10 +171,10 @@ export class ChatComponent implements OnInit {
   }
 
   /**
-   * Botón de teléfono del header: inicia la videollamada de este DM o cuelga
-   * si ya hay una llamada abierta en la misma conversación.
+   * Botones de llamada del header: inician la llamada de voz o la videollamada
+   * de este DM, o cuelgan si ya hay una llamada abierta en la misma conversación.
    */
-  toggleCall(channel: Channel): void {
+  toggleCall(channel: Channel, withVideo: boolean): void {
     const ongoing = this.calls.call();
     if (ongoing) {
       if (ongoing.channelId === channel.id) this.calls.hangUp();
@@ -182,9 +182,17 @@ export class ChatComponent implements OnInit {
       return;
     }
     if (!channel.id || this.calls.starting()) return;
-    this.calls.startCall(channel.id).subscribe({
-      error: error => this.toast.errorFor(error, 'No se pudo iniciar la videollamada. Revisa los permisos de cámara y micrófono.')
+    this.calls.startCall(channel.id, withVideo).subscribe({
+      error: error => this.toast.errorFor(error, withVideo
+        ? 'No se pudo iniciar la videollamada. Revisa los permisos de cámara y micrófono.'
+        : 'No se pudo iniciar la llamada. Revisa el permiso de micrófono.')
     });
+  }
+
+  /** Verdadero si hay una llamada en curso en este DM del tipo indicado. */
+  isCallActive(channel: Channel, withVideo: boolean): boolean {
+    const ongoing = this.calls.call();
+    return !!ongoing && ongoing.channelId === channel.id && this.calls.videoCall() === withVideo;
   }
 
   onSendClick(): void {
