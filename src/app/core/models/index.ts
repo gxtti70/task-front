@@ -117,6 +117,36 @@ export interface ChatMessage {
   recipientCount?: number;
 }
 
+export type CallState = 'RINGING' | 'ACTIVE' | 'ENDED';
+
+export type CallEndReason = 'DECLINED' | 'CANCELLED' | 'MISSED' | 'FINISHED';
+
+/** Instantánea de una llamada; `seq` es el cursor actual de sus eventos. */
+export interface CallSnapshot {
+  id: string;
+  channelId: string;
+  callerId: string;
+  calleeId: string;
+  state: CallState;
+  endReason: CallEndReason | null;
+  /** Cursor de eventos: el cliente sondea con `after=<último seq visto>`. */
+  seq: number;
+  createdAt: string;
+}
+
+/** Tipo de señal: OFFER/ANSWER/ICE traen el SDP o candidato en `payload`. */
+export type CallSignalType = 'OFFER' | 'ANSWER' | 'ICE';
+
+export interface CallEvent {
+  seq: number;
+  type: CallSignalType | 'STATE';
+  fromUserId: string | null;
+  payload: string | null;
+  state: CallState | null;
+  reason: CallEndReason | null;
+  createdAt: string;
+}
+
 export interface Project {
   id: string;
   name: string;

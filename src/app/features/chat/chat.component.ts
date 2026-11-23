@@ -6,6 +6,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LucideAngularModule } from 'lucide-angular';
 import { Channel, ChatMessage, Project, User } from '../../core/models';
 import { ChatService } from '../../core/services/chat.service';
+import { CallService } from '../../core/services/call.service';
 import { PresenceService } from '../../core/services/presence.service';
 import { PushNotificationService } from '../../core/services/push-notification.service';
 import { TypingIndicatorComponent } from './typing-indicator.component';
@@ -25,6 +26,7 @@ import { ChatDisplayItem, buildChatDisplayItems, isImageMessage as isChatImageMe
 })
 export class ChatComponent implements OnInit {
   readonly chat = inject(ChatService);
+  readonly calls = inject(CallService);
   readonly presence = inject(PresenceService);
   private readonly route = inject(ActivatedRoute);
   readonly push = inject(PushNotificationService);
@@ -166,6 +168,23 @@ export class ChatComponent implements OnInit {
   /** Centra el cursor en el campo de texto (botón de mensaje del header). */
   focusComposer(): void {
     this.composer()?.focus();
+  }
+
+  /**
+   * Botón de teléfono del header: inicia la videollamada de este DM o cuelga
+   * si ya hay una llamada abierta en la misma conversación.
+   */
+  toggleCall(channel: Channel): void {
+    const ongoing = this.calls.call();
+    if (ongoing) {
+      if (ongoing.channelId === channel.id) this.calls.hangUp();
+      else this.toast.info('Ya hay una llamada en curso.', 'Llamada ocupada');
+      return;
+    }
+    if (!channel.id || this.calls.starting()) return;
+    this.calls.startCall(channel.id).subscribe({
+      error: error => this.toast.errorFor(error, 'No se pudo iniciar la videollamada. Revisa los permisos de cámara y micrófono.')
+    });
   }
 
   onSendClick(): void {

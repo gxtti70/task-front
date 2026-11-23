@@ -1,0 +1,67 @@
+@if (calls.call(); as call) {
+  <!-- Llamada entrante: tarjeta modal con aceptar / rechazar -->
+  @if (call.state === 'RINGING' && calls.isCallee()) {
+    <div class="call-backdrop">
+      <section appFocusTrap class="call-ring-card" role="alertdialog" aria-modal="true" aria-label="Llamada entrante">
+        <span class="call-ring-avatar" aria-hidden="true">{{ initials(peerName()) }}</span>
+        <strong class="call-ring-name">{{ peerName() }}</strong>
+        <span class="call-ring-status">{{ statusLabel() }}</span>
+        <div class="call-ring-actions">
+          <button type="button" class="call-action call-action--decline" (click)="decline()"
+                  title="Rechazar llamada" aria-label="Rechazar llamada">
+            <lucide-icon name="phone-off" class="h-5 w-5"></lucide-icon>
+          </button>
+          <button type="button" class="call-action call-action--accept" (click)="accept()"
+                  title="Aceptar llamada" aria-label="Aceptar llamada">
+            <lucide-icon name="phone" class="h-5 w-5"></lucide-icon>
+          </button>
+        </div>
+      </section>
+    </div>
+  } @else {
+    <!-- Llamada en curso (o saliente sonando): vídeo remoto, vídeo propio y controles -->
+    <section appFocusTrap class="call-stage" role="dialog" aria-modal="true" aria-label="Videollamada en curso">
+      <header class="call-stage-header">
+        <div class="call-stage-info">
+          <strong>{{ peerName() }}</strong>
+          <span>{{ statusLabel() }}</span>
+        </div>
+        @if (durationLabel(); as duration) {
+          <span class="call-stage-duration">{{ duration }}</span>
+        }
+      </header>
+
+      <div class="call-stage-video">
+        <video #remoteVideo class="call-remote-video" autoplay playsinline></video>
+        @if (!calls.remoteStream()) {
+          <div class="call-stage-placeholder">
+            <span class="call-ring-avatar" aria-hidden="true">{{ initials(peerName()) }}</span>
+            <p>{{ statusLabel() }}</p>
+          </div>
+        }
+        <video #localVideo class="call-local-video" autoplay playsinline muted></video>
+      </div>
+
+      <footer class="call-stage-controls">
+        <button type="button" class="call-control" [class.is-off]="!calls.micEnabled()"
+                [attr.aria-pressed]="!calls.micEnabled()"
+                [title]="calls.micEnabled() ? 'Silenciar micrófono' : 'Activar micrófono'"
+                [attr.aria-label]="calls.micEnabled() ? 'Silenciar micrófono' : 'Activar micrófono'"
+                (click)="calls.toggleMic()">
+          <lucide-icon [name]="calls.micEnabled() ? 'mic' : 'mic-off'" class="h-4 w-4"></lucide-icon>
+        </button>
+        <button type="button" class="call-control" [class.is-off]="!calls.camEnabled()"
+                [attr.aria-pressed]="!calls.camEnabled()"
+                [title]="calls.camEnabled() ? 'Apagar cámara' : 'Encender cámara'"
+                [attr.aria-label]="calls.camEnabled() ? 'Apagar cámara' : 'Encender cámara'"
+                (click)="calls.toggleCam()">
+          <lucide-icon [name]="calls.camEnabled() ? 'video' : 'video-off'" class="h-4 w-4"></lucide-icon>
+        </button>
+        <button type="button" class="call-control call-control--hangup" title="Colgar" aria-label="Colgar"
+                (click)="hangUp()">
+          <lucide-icon name="phone-off" class="h-4 w-4"></lucide-icon>
+        </button>
+      </footer>
+    </section>
+  }
+}

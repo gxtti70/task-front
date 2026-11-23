@@ -178,9 +178,12 @@
           </span>
           @if (channel.projectId === null && channel.otherUserId) {
             <span class="flex items-center gap-1.5">
-              <button type="button" class="premium-icon-button" disabled
-                      title="Videollamada próximamente" aria-label="Iniciar videollamada (próximamente)">
-                <lucide-icon name="phone" class="h-4 w-4"></lucide-icon>
+              <button type="button" class="premium-icon-button"
+                      [title]="calls.call()?.channelId === channel.id ? 'Colgar' : 'Iniciar videollamada'"
+                      [attr.aria-label]="calls.call()?.channelId === channel.id ? 'Colgar la videollamada' : 'Iniciar videollamada'"
+                      [disabled]="calls.starting()"
+                      (click)="toggleCall(channel)">
+                <lucide-icon [name]="calls.call()?.channelId === channel.id ? 'phone-off' : 'phone'" class="h-4 w-4"></lucide-icon>
               </button>
               <button type="button" class="premium-icon-button"
                       title="Escribir mensaje" aria-label="Escribir mensaje" (click)="focusComposer()">
